@@ -15,12 +15,17 @@
             --bg-color: #0a0a0f;
             --card-bg: #12121a;
             --text-color: #eaeaea;
+            --muted-text-color: #b8b8c8;
             --accent-color: #8b5cf6;
             --accent-secondary: #06b6d4;
             --danger-color: #ef4444;
             --chat-bg: #0f0f18;
             --border-color: rgba(139, 92, 246, 0.2);
             --glow-color: rgba(139, 92, 246, 0.4);
+            --input-bg: rgba(15, 15, 26, 0.9);
+            --input-border: rgba(255, 255, 255, 0.2);
+            --option-bg: #10101a;
+            --focus-ring: #22d3ee;
         }
 
         body {
@@ -98,9 +103,9 @@
             width: 100%;
             padding: 14px 16px;
             margin: 10px 0;
-            background: rgba(255, 255, 255, 0.05);
-            border: 1px solid rgba(255, 255, 255, 0.1);
-            color: white;
+            background: var(--input-bg);
+            border: 1px solid var(--input-border);
+            color: var(--text-color);
             border-radius: 12px;
             box-sizing: border-box;
             font-size: 15px;
@@ -115,9 +120,26 @@
             background: rgba(255, 255, 255, 0.08);
         }
 
+        input::placeholder {
+            color: var(--muted-text-color);
+            opacity: 1;
+        }
+
         select option {
-            color: #111;
-            background: #fff;
+            color: var(--text-color);
+            background: var(--option-bg);
+        }
+
+        button:focus-visible,
+        input:focus-visible,
+        select:focus-visible,
+        .chat-tab:focus-visible,
+        .reaction-btn:focus-visible,
+        #notification-toast:focus-visible,
+        .checkbox-wrapper input[type="checkbox"]:focus-visible {
+            outline: 2px solid var(--focus-ring);
+            outline-offset: 2px;
+            box-shadow: 0 0 0 4px rgba(34, 211, 238, 0.2);
         }
 
         button {
@@ -458,7 +480,7 @@
             background: transparent;
             border: none;
             border-bottom: 2px solid transparent;
-            color: #888;
+            color: var(--muted-text-color);
             font-weight: 500;
             font-size: 14px;
             cursor: pointer;
@@ -610,7 +632,7 @@
         }
 
         .msg-time {
-            color: #555;
+            color: var(--muted-text-color);
             font-size: 11px;
             margin-right: 8px;
         }
@@ -625,7 +647,7 @@
         }
 
         .msg-system {
-            color: #666;
+            color: var(--muted-text-color);
             font-style: italic;
             text-align: center;
             font-size: 12px;
@@ -738,7 +760,7 @@
             gap: 12px;
             margin-top: 16px;
             font-size: 13px;
-            color: #888;
+            color: var(--muted-text-color);
         }
 
         .checkbox-wrapper {
@@ -780,6 +802,14 @@
             box-shadow: 0 10px 30px rgba(139, 92, 246, 0.4);
             cursor: pointer;
             animation: pulse 2s infinite;
+        }
+
+        #language-select {
+            margin: 0 0 0 8px;
+            padding: 6px 8px;
+            background: var(--option-bg);
+            color: var(--text-color);
+            border-color: var(--input-border);
         }
 
         @keyframes pulse {
@@ -860,7 +890,7 @@
     </div>
 
     <!-- Toast -->
-    <div id="notification-toast" onclick="window.location.reload()">
+    <div id="notification-toast" onclick="window.location.reload()" role="button" tabindex="0">
         🎤 Mikrofon algılandı! Katılmak için tıklayın.
     </div>
 
@@ -884,11 +914,11 @@
     <div id="login-overlay">
         <div class="login-box">
             <h2 id="login-title">🎙️ Sesli Sohbet</h2>
-            <input type="text" id="nickname-input" placeholder="Kullanıcı Adı" value="Misafir">
+            <input type="text" id="nickname-input" placeholder="Kullanıcı Adı" value="Misafir" autocomplete="nickname">
             <select id="room-select" onchange="checkRoomLock()">
                 <option value="" disabled selected>Odalar Yükleniyor...</option>
             </select>
-            <input type="password" id="password-input" placeholder="Oda Şifresi">
+            <input type="password" id="password-input" placeholder="Oda Şifresi" autocomplete="current-password">
             <button id="join-btn" onclick="startApp()">Odaya Katıl</button>
             <div class="settings-area" style="justify-content: center;">
                 <label class="checkbox-wrapper">
@@ -898,7 +928,7 @@
             <div class="settings-area" style="justify-content: center;">
                 <label class="checkbox-wrapper">
                     🌐
-                    <select id="language-select" style="margin:0 0 0 8px; padding:6px 8px;">
+                    <select id="language-select">
                         <option value="tr">Türkçe</option>
                         <option value="en">English</option>
                         <option value="es">Español</option>
@@ -951,14 +981,14 @@
         <!-- Chat Section -->
         <div id="chat-panel">
             <!-- Tab Navigation -->
-            <div class="chat-tabs">
-                <button class="chat-tab active" id="chat-tab-btn" onclick="switchTab('chat')">💬 Sohbet</button>
-                <button class="chat-tab" id="participants-tab-btn" onclick="switchTab('participants')"><span id="participants-tab-label">👥 Katılımcılar</span> (<span id="participant-count">0</span>)</button>
-                <button class="chat-tab" id="reactions-tab-btn" onclick="switchTab('reactions')">😂 Tepkiler</button>
+            <div class="chat-tabs" role="tablist">
+                <button class="chat-tab active" id="chat-tab-btn" onclick="switchTab('chat', this)" role="tab" aria-controls="chat-tab-content" aria-selected="true">💬 Sohbet</button>
+                <button class="chat-tab" id="participants-tab-btn" onclick="switchTab('participants', this)" role="tab" aria-controls="participants-tab-content" aria-selected="false"><span id="participants-tab-label">👥 Katılımcılar</span> (<span id="participant-count">0</span>)</button>
+                <button class="chat-tab" id="reactions-tab-btn" onclick="switchTab('reactions', this)" role="tab" aria-controls="reactions-tab-content" aria-selected="false">😂 Tepkiler</button>
             </div>
 
             <!-- Chat Tab Content -->
-            <div id="chat-tab-content" class="tab-content active">
+            <div id="chat-tab-content" class="tab-content active" role="tabpanel">
                 <div id="chat-messages">
                     <div class="msg-system">Sohbete hoş geldiniz!</div>
                 </div>
@@ -969,14 +999,14 @@
             </div>
 
             <!-- Participants Tab Content -->
-            <div id="participants-tab-content" class="tab-content">
+            <div id="participants-tab-content" class="tab-content" role="tabpanel" hidden>
                 <div id="participants-list">
                     <!-- Participants will be added dynamically -->
                 </div>
             </div>
 
             <!-- Reactions Tab Content -->
-            <div id="reactions-tab-content" class="tab-content">
+            <div id="reactions-tab-content" class="tab-content" role="tabpanel" hidden>
                 <div id="reactions-list">
                     <!-- Reactions will be loaded dynamically -->
                 </div>
@@ -1071,6 +1101,23 @@
             }
             document.getElementById('message-input').placeholder = t('ui.messagePlaceholder');
             document.getElementById('send-btn').innerText = t('ui.send');
+            document.getElementById('notification-toast').setAttribute('aria-label', t('ui.aria.micDetectedAction'));
+            document.getElementById('nickname-input').setAttribute('aria-label', t('ui.aria.nicknameInput'));
+            document.getElementById('room-select').setAttribute('aria-label', t('ui.aria.roomSelect'));
+            document.getElementById('password-input').setAttribute('aria-label', t('ui.aria.passwordInput'));
+            document.getElementById('join-btn').setAttribute('aria-label', t('ui.aria.joinRoom'));
+            document.getElementById('sound-toggle-login').setAttribute('aria-label', t('ui.aria.notificationSounds'));
+            document.getElementById('language-select').setAttribute('aria-label', t('ui.aria.languageSelect'));
+            document.getElementById('sound-toggle-main').setAttribute('aria-label', t('ui.aria.entrySounds'));
+            document.getElementById('btn-share-screen-header').setAttribute('aria-label', t('ui.aria.shareScreen'));
+            document.getElementById('my-mute-btn').setAttribute('aria-label', t('ui.aria.toggleMute'));
+            document.getElementById('leave-btn').setAttribute('aria-label', t('ui.aria.leaveRoom'));
+            document.getElementById('fullscreen-btn').setAttribute('aria-label', t('ui.aria.fullscreen'));
+            document.getElementById('chat-tab-btn').setAttribute('aria-label', t('ui.aria.tabChat'));
+            document.getElementById('participants-tab-btn').setAttribute('aria-label', t('ui.aria.tabParticipants'));
+            document.getElementById('reactions-tab-btn').setAttribute('aria-label', t('ui.aria.tabReactions'));
+            document.getElementById('message-input').setAttribute('aria-label', t('ui.aria.messageInput'));
+            document.getElementById('send-btn').setAttribute('aria-label', t('ui.aria.sendMessage'));
             const nicknameInput = document.getElementById('nickname-input');
             if (nicknameInput && nicknameInput.dataset.userEdited !== 'true') {
                 nicknameInput.value = t('ui.defaultGuest');
@@ -1106,6 +1153,29 @@
                 });
             const languageSelect = document.getElementById('language-select');
             languageSelect.value = window.i18next.resolvedLanguage || 'tr';
+            const notificationToast = document.getElementById('notification-toast');
+            if (notificationToast) {
+                notificationToast.addEventListener('keydown', (event) => {
+                    if (event.key === 'Enter' || event.key === ' ') {
+                        event.preventDefault();
+                        window.location.reload();
+                    }
+                });
+            }
+            const tabs = Array.from(document.querySelectorAll('.chat-tab'));
+            tabs.forEach((tab, index) => {
+                tab.addEventListener('keydown', (event) => {
+                    let nextIndex = null;
+                    if (event.key === 'ArrowRight') nextIndex = (index + 1) % tabs.length;
+                    if (event.key === 'ArrowLeft') nextIndex = (index - 1 + tabs.length) % tabs.length;
+                    if (event.key === 'Home') nextIndex = 0;
+                    if (event.key === 'End') nextIndex = tabs.length - 1;
+                    if (nextIndex === null) return;
+                    event.preventDefault();
+                    tabs[nextIndex].focus();
+                    tabs[nextIndex].click();
+                });
+            });
             const nicknameInput = document.getElementById('nickname-input');
             if (nicknameInput) {
                 nicknameInput.addEventListener('input', () => {
@@ -1163,24 +1233,37 @@
         }
 
         // --- Tab Switching ---
-        function switchTab(tabName) {
+        function switchTab(tabName, sourceButton = null) {
+            const tabButtons = document.querySelectorAll('.chat-tab');
             // Update tab buttons
-            document.querySelectorAll('.chat-tab').forEach(tab => {
+            tabButtons.forEach(tab => {
                 tab.classList.remove('active');
+                tab.setAttribute('aria-selected', 'false');
             });
-            event.target.classList.add('active');
+            const activeButton = sourceButton || document.getElementById(`${tabName}-tab-btn`);
+            if (activeButton) {
+                activeButton.classList.add('active');
+                activeButton.setAttribute('aria-selected', 'true');
+            }
 
             // Update tab content
             document.querySelectorAll('.tab-content').forEach(content => {
                 content.classList.remove('active');
+                content.hidden = true;
             });
 
             if (tabName === 'chat') {
-                document.getElementById('chat-tab-content').classList.add('active');
+                const panel = document.getElementById('chat-tab-content');
+                panel.classList.add('active');
+                panel.hidden = false;
             } else if (tabName === 'participants') {
-                document.getElementById('participants-tab-content').classList.add('active');
+                const panel = document.getElementById('participants-tab-content');
+                panel.classList.add('active');
+                panel.hidden = false;
             } else if (tabName === 'reactions') {
-                document.getElementById('reactions-tab-content').classList.add('active');
+                const panel = document.getElementById('reactions-tab-content');
+                panel.classList.add('active');
+                panel.hidden = false;
             }
         }
 
@@ -1677,10 +1760,10 @@
             let controlsHtml = '';
             if (!isMe) {
                 controlsHtml = `
-                    <button class="kick-btn" title="${t('ui.kickVoteTitle')}" onclick="startVote('${uid}', '${name}')">⚠️</button>
+                    <button class="kick-btn" title="${t('ui.kickVoteTitle')}" aria-label="${t('ui.aria.startVoteAgainst', { name })}" onclick="startVote('${uid}', '${name}')">⚠️</button>
                     <div class="user-controls">
-                        <button class="mute-btn-small" onclick="toggleUserMute('${uid}')" id="mute-btn-${uid}">🔊</button>
-                        <input type="range" min="0" max="1" step="0.1" value="1" oninput="setVolume('${uid}', this.value)">
+                        <button class="mute-btn-small" aria-label="${t('ui.aria.toggleUserMute', { name })}" onclick="toggleUserMute('${uid}')" id="mute-btn-${uid}">🔊</button>
+                        <input type="range" min="0" max="1" step="0.1" value="1" aria-label="${t('ui.aria.userVolume', { name })}" oninput="setVolume('${uid}', this.value)">
                     </div>
                 `;
             } else {
@@ -1696,7 +1779,7 @@
 
                 controlsHtml = `
                     <div class="user-controls" style="justify-content:center; gap:10px; margin-top:15px;">
-                       <span style="font-size:12px; color:#555; align-self:center;">${statusText}</span>
+                       <span style="font-size:12px; color:var(--muted-text-color); align-self:center;">${statusText}</span>
                     </div>`;
             }
 

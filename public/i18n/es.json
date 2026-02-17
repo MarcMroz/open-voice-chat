@@ -65,6 +65,28 @@
     "defaultUser": "Usuario",
     "stageSharing": "🖥️ {name} está compartiendo pantalla",
     "noAudioSource": "No se encontró una fuente de audio (sin acceso al micrófono).",
-    "loginTitle": "Chat de Voz"
+    "loginTitle": "Chat de Voz",
+    "aria": {
+      "micDetectedAction": "Recargar la página y unirse con micrófono",
+      "nicknameInput": "Nombre de usuario",
+      "roomSelect": "Selección de sala",
+      "passwordInput": "Contraseña de la sala",
+      "joinRoom": "Unirse a la sala seleccionada",
+      "notificationSounds": "Activar o desactivar sonidos de notificación",
+      "languageSelect": "Selector de idioma",
+      "entrySounds": "Activar o desactivar sonidos de entrada y salida",
+      "shareScreen": "Compartir pantalla",
+      "toggleMute": "Activar o desactivar silencio del micrófono",
+      "leaveRoom": "Salir de la sala",
+      "fullscreen": "Cambiar pantalla completa",
+      "tabChat": "Abrir pestaña de chat",
+      "tabParticipants": "Abrir pestaña de participantes",
+      "tabReactions": "Abrir pestaña de reacciones",
+      "messageInput": "Entrada de mensaje de chat",
+      "sendMessage": "Enviar mensaje",
+      "startVoteAgainst": "Iniciar votación contra {name}",
+      "toggleUserMute": "Activar o desactivar silencio para {name}",
+      "userVolume": "Ajustar volumen para {name}"
+    }
   }
 }
