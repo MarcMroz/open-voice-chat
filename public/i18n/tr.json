@@ -38,6 +38,8 @@
     "voteWaiting": "Oyunuz alındı, sonuç bekleniyor...",
     "yes": "Evet",
     "no": "Hayır",
+    "ok": "Tamam",
+    "cancel": "İptal",
     "reactionsEmpty": "Henüz tepki eklenmemiş",
     "reactionSent": "{user} bir tepki gönderdi 🎵",
     "participantStatus": {

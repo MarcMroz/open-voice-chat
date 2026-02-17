@@ -38,6 +38,8 @@
     "voteWaiting": "Your vote has been submitted, waiting for results...",
     "yes": "Yes",
     "no": "No",
+    "ok": "OK",
+    "cancel": "Cancel",
     "reactionsEmpty": "No reactions added yet",
     "reactionSent": "{user} sent a reaction 🎵",
     "participantStatus": {

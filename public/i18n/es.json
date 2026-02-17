@@ -38,6 +38,8 @@
     "voteWaiting": "Tu voto fue enviado, esperando resultados...",
     "yes": "Sí",
     "no": "No",
+    "ok": "Aceptar",
+    "cancel": "Cancelar",
     "reactionsEmpty": "Aún no se agregaron reacciones",
     "reactionSent": "{user} envió una reacción 🎵",
     "participantStatus": {
