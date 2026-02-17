@@ -134,7 +134,11 @@ You can configure the port in the `.env` file (create it if it doesn't exist):
 
 ```env
 PORT=3000
+REACTIONS_AGE=base
 ```
+
+- `REACTIONS_AGE`: Sets default reaction pack loaded by the app (`base` or `adult`).  
+  Example: run with `REACTIONS_AGE=adult npm start` to include adult reactions by default.
 
 For **Azure Web App (Code)** deployments, do not hardcode a port in Azure. The platform injects `PORT` automatically and the app listens to it.
 

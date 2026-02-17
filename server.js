@@ -14,6 +14,9 @@ const path = require('path');
 const fs = require('fs');
 
 const PORT = process.env.PORT || 3000;
+const ALLOWED_REACTION_AGES = ['base', 'adult'];
+const REQUESTED_DEFAULT_REACTION_AGE = String(process.env.REACTIONS_AGE || 'base').toLowerCase();
+const DEFAULT_REACTION_AGE = ALLOWED_REACTION_AGES.includes(REQUESTED_DEFAULT_REACTION_AGE) ? REQUESTED_DEFAULT_REACTION_AGE : 'base';
 
 // Global State
 const roomUsers = {};           // { roomId: { peerId: "Nickname" } }
@@ -122,8 +125,8 @@ function getReactions(req, res) {
     const requestedLanguage = rawLanguage ? rawLanguage.split('-')[0] : '';
     const supportedLanguages = getSupportedReactionLanguages(reactionsPath);
     const language = supportedLanguages.includes(requestedLanguage) ? requestedLanguage : 'en';
-    const requestedAge = String(req.query.age || 'base').toLowerCase();
-    const age = ['base', 'adult'].includes(requestedAge) ? requestedAge : 'base';
+    const requestedAge = String(req.query.age || DEFAULT_REACTION_AGE).toLowerCase();
+    const age = ALLOWED_REACTION_AGES.includes(requestedAge) ? requestedAge : 'base';
 
     const files = [
       ...getReactionFilesFromDir(reactionsPath, 'base'),
