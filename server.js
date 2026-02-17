@@ -106,17 +106,29 @@ function getReactionFilesFromDir(baseDir, relativeDir) {
     .map(file => ({ file, relativeDir }));
 }
 
+function getSupportedReactionLanguages(reactionsPath) {
+  if (!fs.existsSync(reactionsPath)) return [];
+  return fs.readdirSync(reactionsPath).filter(dirName => {
+    const fullPath = path.join(reactionsPath, dirName);
+    return dirName !== 'base' && fs.statSync(fullPath).isDirectory();
+  });
+}
+
 // API: Get Reactions
 function getReactions(req, res) {
   try {
     const reactionsPath = path.join(__dirname, 'public/reactions');
-    const language = (req.query.lang || 'en').toLowerCase().split('-')[0];
-    const age = (req.query.age || 'all').toLowerCase();
+    const rawLanguage = String(req.query.lang || '').toLowerCase();
+    const requestedLanguage = rawLanguage ? rawLanguage.split('-')[0] : '';
+    const supportedLanguages = getSupportedReactionLanguages(reactionsPath);
+    const language = supportedLanguages.includes(requestedLanguage) ? requestedLanguage : 'en';
+    const requestedAge = String(req.query.age || 'base').toLowerCase();
+    const age = ['base', 'adult'].includes(requestedAge) ? requestedAge : 'base';
 
     const files = [
       ...getReactionFilesFromDir(reactionsPath, 'base'),
       ...getReactionFilesFromDir(reactionsPath, `${language}/base`),
-      ...(age === 'adult' || age === 'all' ? getReactionFilesFromDir(reactionsPath, `${language}/adult`) : [])
+      ...(age === 'adult' ? getReactionFilesFromDir(reactionsPath, `${language}/adult`) : [])
     ];
     
     const reactions = files

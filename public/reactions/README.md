@@ -27,6 +27,6 @@ Rules:
 
 ## Suggestions
 
-- File size: < 500KB
+- File size: < 500 KB
 - Duration: 1-5 seconds
 - Format: MP3
