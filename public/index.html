@@ -994,7 +994,7 @@
             <select id="room-select" onchange="checkRoomLock()">
                 <option value="" disabled selected>Odalar Yükleniyor...</option>
             </select>
-            <input type="password" id="password-input" placeholder="Oda Şifresi" autocomplete="current-password" onkeydown="if(event.key==='Enter'){startApp()}">
+            <input type="password" id="password-input" placeholder="Oda Şifresi" autocomplete="current-password" onkeydown="if (event.key === 'Enter') { event.preventDefault(); startApp(); }">
             <button id="join-btn" onclick="startApp()">Odaya Katıl</button>
             <div class="settings-area" style="justify-content: center;">
                 <label class="checkbox-wrapper">
