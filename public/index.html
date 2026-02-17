@@ -706,6 +706,55 @@
             border-radius: 2px;
         }
 
+        /* Generic App Popup */
+        #app-popup-backdrop {
+            display: none;
+            position: fixed;
+            inset: 0;
+            background: rgba(10, 10, 15, 0.75);
+            backdrop-filter: blur(6px);
+            z-index: 4500;
+            align-items: center;
+            justify-content: center;
+        }
+
+        #app-popup {
+            background: rgba(18, 18, 26, 0.95);
+            border: 1px solid var(--border-color);
+            border-radius: 16px;
+            box-shadow: 0 20px 50px rgba(0, 0, 0, 0.5), 0 0 30px var(--glow-color);
+            width: min(420px, calc(100vw - 32px));
+            padding: 20px;
+            text-align: center;
+        }
+
+        #app-popup-message {
+            margin: 0 0 18px;
+            color: #fff;
+            line-height: 1.5;
+            white-space: pre-line;
+            word-break: break-word;
+        }
+
+        #app-popup-actions {
+            display: flex;
+            justify-content: center;
+            gap: 10px;
+        }
+
+        #app-popup-actions button {
+            width: auto;
+            min-width: 90px;
+            margin: 0;
+            padding: 10px 16px;
+        }
+
+        #app-popup-cancel-btn {
+            background: rgba(255, 255, 255, 0.08);
+            border: 1px solid rgba(255, 255, 255, 0.16);
+            color: #fff;
+        }
+
         .vote-actions {
             display: flex;
             gap: 12px;
@@ -908,6 +957,16 @@
         </div>
         <div id="vote-timer-bar-container" style="background:#444; height:4px; margin-top:10px; border-radius:2px;">
             <div id="vote-timer"></div>
+        </div>
+    </div>
+
+    <div id="app-popup-backdrop" role="dialog" aria-modal="true" aria-labelledby="app-popup-message">
+        <div id="app-popup">
+            <p id="app-popup-message"></p>
+            <div id="app-popup-actions">
+                <button id="app-popup-cancel-btn" style="display:none;"></button>
+                <button id="app-popup-ok-btn"></button>
+            </div>
         </div>
     </div>
 
@@ -1129,6 +1188,52 @@
                 select.innerHTML = `<option value="" disabled selected>${t('ui.roomLoading')}</option>`;
             }
             updateRoomDisplay();
+        }
+
+        let popupResolve;
+        const popupQueue = [];
+
+        function showNextPopup() {
+            if (popupResolve || popupQueue.length === 0) return;
+
+            const { message, requireDecision, resolve } = popupQueue.shift();
+            const backdrop = document.getElementById('app-popup-backdrop');
+            const msg = document.getElementById('app-popup-message');
+            const okBtn = document.getElementById('app-popup-ok-btn');
+            const cancelBtn = document.getElementById('app-popup-cancel-btn');
+
+            msg.innerText = message;
+            okBtn.innerText = t('ui.ok');
+            cancelBtn.innerText = t('ui.cancel');
+            cancelBtn.style.display = requireDecision ? 'inline-block' : 'none';
+
+            popupResolve = resolve;
+            okBtn.onclick = () => closeAppPopup(true);
+            cancelBtn.onclick = () => closeAppPopup(false);
+            backdrop.style.display = 'flex';
+        }
+
+        function closeAppPopup(result) {
+            const backdrop = document.getElementById('app-popup-backdrop');
+            backdrop.style.display = 'none';
+            if (popupResolve) popupResolve(result);
+            popupResolve = null;
+            showNextPopup();
+        }
+
+        function showAppPopup(message, requireDecision = false) {
+            return new Promise(resolve => {
+                popupQueue.push({ message, requireDecision, resolve });
+                showNextPopup();
+            });
+        }
+
+        function showAppAlert(message) {
+            return showAppPopup(message);
+        }
+
+        function showAppConfirm(message) {
+            return showAppPopup(message, true);
         }
 
         // --- Init ---
@@ -1406,7 +1511,7 @@
             const roomId = document.getElementById('room-select').value;
             const password = document.getElementById('password-input').value;
 
-            if (!roomId) return alert(t('ui.selectRoom'));
+            if (!roomId) return showAppAlert(t('ui.selectRoom'));
 
             const joinBtn = document.getElementById('join-btn');
             joinBtn.innerText = t('ui.connecting');
@@ -1420,7 +1525,7 @@
                 console.warn("Mikrofon hatası:", err);
 
                 // Eğer mikrofon bulunamazsa (NotFoundError) veya erişim reddedilirse
-                const proceed = confirm(t('ui.micErrorConfirm', { error: err.name }));
+                const proceed = await showAppConfirm(t('ui.micErrorConfirm', { error: err.name }));
 
                 if (proceed) {
                     // Boş (Sessiz) bir ses kanalı oluştur (Dummy Stream)
@@ -1482,11 +1587,11 @@
 
                 myPeer.on('error', e => {
                     console.error("Peer Error", e);
-                    if (e.type !== 'peer-unavailable') alert(t('ui.connectionError', { error: e.type }));
+                    if (e.type !== 'peer-unavailable') showAppAlert(t('ui.connectionError', { error: e.type }));
                 });
 
             } catch (err) {
-                alert(t('ui.connectionStartFailed', { error: err.message }));
+                await showAppAlert(t('ui.connectionStartFailed', { error: err.message }));
                 joinBtn.disabled = false;
                 joinBtn.innerText = t('ui.joinRoom');
             }
@@ -1536,7 +1641,7 @@
                 updateParticipantsList();
             });
 
-            socket.on('error', msg => { alert(t('ui.errorPrefix', { error: msg })); window.location.reload(); });
+            socket.on('error', msg => { showAppAlert(t('ui.errorPrefix', { error: msg })).then(() => window.location.reload()); });
 
             socket.on('user-connected', (uid, name) => {
                 nicknames[uid] = name;
@@ -1592,8 +1697,7 @@
 
             socket.on('kick-user', (targetId) => {
                 if (myPeer && targetId === myPeer.id) {
-                    alert(t('ui.kickedByVote'));
-                    window.location.reload();
+                    showAppAlert(t('ui.kickedByVote')).then(() => window.location.reload());
                 }
             });
 
@@ -1616,7 +1720,7 @@
             });
 
             socket.on('share-denied', () => {
-                alert(t('ui.shareDenied'));
+                showAppAlert(t('ui.shareDenied'));
                 // Reset button state
                 const btn = document.getElementById('btn-share-screen-header');
                 if (btn) btn.classList.remove('loading'); // If we had loading state
@@ -1629,8 +1733,8 @@
         }
 
         // --- Vote UI ---
-        function startVote(targetId, targetName) {
-            if (!confirm(t('ui.kickConfirm', { name: targetName }))) return;
+        async function startVote(targetId, targetName) {
+            if (!await showAppConfirm(t('ui.kickConfirm', { name: targetName }))) return;
             socket.emit('start-vote', targetId);
         }
 
@@ -1936,7 +2040,7 @@
                     // No System Audio, Just Mic
                     finalAudioTrack = micAudioTracks[0];
                 } else {
-                    alert(t('ui.noAudioSource'));
+                    await showAppAlert(t('ui.noAudioSource'));
                     socket.emit('stop-share');
                     return;
                 }
