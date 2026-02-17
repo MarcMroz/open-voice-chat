@@ -110,6 +110,7 @@
             box-sizing: border-box;
             font-size: 15px;
             transition: all 0.3s ease;
+            color-scheme: dark;
         }
 
         input:focus,
@@ -1059,14 +1060,20 @@
             const select = document.getElementById('room-select');
             if (!select) return;
             const selectedValue = select.value;
-            select.innerHTML = `<option value="" disabled selected>${t('ui.roomSelect')}</option>`;
+            select.innerHTML = '';
             availableRooms.forEach(r => {
                 const opt = document.createElement('option');
                 opt.value = r.id;
                 opt.innerText = r.isLocked ? `🔒 ${r.name}` : r.name;
                 select.appendChild(opt);
             });
-            if (selectedValue) select.value = selectedValue;
+            if (selectedValue && availableRooms.some(r => r.id === selectedValue)) {
+                select.value = selectedValue;
+            } else if (availableRooms.length > 0) {
+                select.value = availableRooms[0].id;
+            }
+            select.style.display = availableRooms.length === 1 ? 'none' : 'block';
+            checkRoomLock();
         }
 
         function applyTranslations() {
