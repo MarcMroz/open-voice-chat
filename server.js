@@ -52,8 +52,19 @@ function getClientIP(socket) {
 // Load Rooms Config
 let rooms = [];
 function loadRooms() {
+  const roomsFromEnv = process.env.ROOMS_JSON;
+  if (roomsFromEnv) {
+    try {
+      rooms = JSON.parse(roomsFromEnv);
+      console.log("Loaded Rooms from ROOMS_JSON:", rooms.map(r => r.name));
+      return;
+    } catch (err) {
+      console.error("Error parsing ROOMS_JSON:", err);
+    }
+  }
+
   try {
-    const data = fs.readFileSync('./config/rooms.json', 'utf8');
+    const data = fs.readFileSync(path.join(__dirname, 'config/rooms.json'), 'utf8');
     rooms = JSON.parse(data);
     console.log("Loaded Rooms:", rooms.map(r => r.name));
   } catch (err) {
