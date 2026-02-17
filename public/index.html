@@ -1009,7 +1009,7 @@
         const t = (key, params) => {
             if (window.i18next && typeof window.i18next.t === 'function') return window.i18next.t(key, params);
             if (!i18nUnavailableWarned) {
-                console.warn('i18n is not available; translation keys will be shown instead of localized text.');
+                console.warn('i18next is not available; translation keys will be shown instead of localized text.');
                 i18nUnavailableWarned = true;
             }
             return key;
@@ -1035,7 +1035,8 @@
         }
 
         function applyTranslations() {
-            document.documentElement.lang = window.i18next?.resolvedLanguage || 'tr';
+            if (!window.i18next) return;
+            document.documentElement.lang = window.i18next.resolvedLanguage || 'tr';
             document.title = t('app.title');
             document.getElementById('https-warning').innerText = t('ui.httpsWarning');
             document.getElementById('notification-toast').innerText = t('ui.micDetected');
@@ -1079,7 +1080,7 @@
         // --- Init ---
         window.onload = async function () {
             if (!window.i18next || !window.i18nextHttpBackend || !window.i18nextBrowserLanguageDetector) {
-                console.error('i18n library failed to load. Please refresh the page or check your connection.');
+                console.error('Required i18next libraries failed to load. Please refresh the page or check your connection.');
                 return;
             }
             await window.i18next
@@ -1089,6 +1090,7 @@
                     fallbackLng: 'tr',
                     supportedLngs: ['tr', 'en', 'es'],
                     load: 'languageOnly',
+                    // Translation files are served from /i18n/{lng}.json
                     backend: { loadPath: '/i18n/{{lng}}.json' },
                     detection: {
                         order: ['localStorage', 'navigator'],
