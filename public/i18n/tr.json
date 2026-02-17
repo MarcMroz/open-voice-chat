@@ -65,6 +65,28 @@
     "defaultUser": "Kullanıcı",
     "stageSharing": "🖥️ {name} Ekranını Paylaşıyor",
     "noAudioSource": "Ses kaynağı bulunamadı (Mikrofon erişimi yok).",
-    "loginTitle": "Sesli Sohbet"
+    "loginTitle": "Sesli Sohbet",
+    "aria": {
+      "micDetectedAction": "Sayfayı yenileyip mikrofonla katıl",
+      "nicknameInput": "Kullanıcı adı",
+      "roomSelect": "Oda seçimi",
+      "passwordInput": "Oda şifresi",
+      "joinRoom": "Seçili odaya katıl",
+      "notificationSounds": "Bildirim seslerini aç veya kapat",
+      "languageSelect": "Dil seçimi",
+      "entrySounds": "Giriş ve çıkış seslerini aç veya kapat",
+      "shareScreen": "Ekran paylaş",
+      "toggleMute": "Mikrofon susturmayı değiştir",
+      "leaveRoom": "Odadan ayrıl",
+      "fullscreen": "Tam ekranı değiştir",
+      "tabChat": "Sohbet sekmesini aç",
+      "tabParticipants": "Katılımcılar sekmesini aç",
+      "tabReactions": "Tepkiler sekmesini aç",
+      "messageInput": "Sohbet mesajı girişi",
+      "sendMessage": "Mesaj gönder",
+      "startVoteAgainst": "{name} için oylama başlat",
+      "toggleUserMute": "{name} için sesi aç veya kapat",
+      "userVolume": "{name} için ses düzeyini ayarla"
+    }
   }
 }

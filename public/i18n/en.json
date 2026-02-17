@@ -65,6 +65,28 @@
     "defaultUser": "User",
     "stageSharing": "🖥️ {name} is sharing screen",
     "noAudioSource": "No audio source found (microphone access unavailable).",
-    "loginTitle": "Voice Chat"
+    "loginTitle": "Voice Chat",
+    "aria": {
+      "micDetectedAction": "Refresh page and join with microphone",
+      "nicknameInput": "Nickname",
+      "roomSelect": "Room selection",
+      "passwordInput": "Room password",
+      "joinRoom": "Join selected room",
+      "notificationSounds": "Toggle notification sounds",
+      "languageSelect": "Language selector",
+      "entrySounds": "Toggle entry and leave sounds",
+      "shareScreen": "Share screen",
+      "toggleMute": "Toggle microphone mute",
+      "leaveRoom": "Leave room",
+      "fullscreen": "Toggle fullscreen",
+      "tabChat": "Open chat tab",
+      "tabParticipants": "Open participants tab",
+      "tabReactions": "Open reactions tab",
+      "messageInput": "Chat message input",
+      "sendMessage": "Send message",
+      "startVoteAgainst": "Start vote against {name}",
+      "toggleUserMute": "Toggle mute for {name}",
+      "userVolume": "Set volume for {name}"
+    }
   }
 }
