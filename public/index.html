@@ -1003,7 +1003,15 @@
         const activeCalls = {}; // Keep track of active MediaConnections
         let currentScreenSharerId = null; // Track who is sharing screen
 
-        const t = (key, params) => window.i18n.t(key, params);
+        let i18nUnavailableWarned = false;
+        const t = (key, params) => {
+            if (window.i18n && typeof window.i18n.t === 'function') return window.i18n.t(key, params);
+            if (!i18nUnavailableWarned) {
+                console.warn('i18n is not available; translation keys will be shown instead of localized text.');
+                i18nUnavailableWarned = true;
+            }
+            return key;
+        };
 
         function updateRoomDisplay() {
             const roomDisplay = document.getElementById('room-display');
@@ -1049,13 +1057,13 @@
             document.getElementById('participants-tab-label').innerText = t('ui.tabs.participants');
             document.getElementById('reactions-tab-btn').innerText = t('ui.tabs.reactions');
             const chatMessages = document.getElementById('chat-messages');
-            if (chatMessages && chatMessages.children.length <= 1) {
+            if (chatMessages && chatMessages.querySelectorAll('.message').length === 0) {
                 chatMessages.innerHTML = `<div class="msg-system">${t('ui.chatWelcome')}</div>`;
             }
             document.getElementById('message-input').placeholder = t('ui.messagePlaceholder');
             document.getElementById('send-btn').innerText = t('ui.send');
             const nicknameInput = document.getElementById('nickname-input');
-            if (nicknameInput && (!nicknameInput.value || ['Misafir', 'Guest', 'Invitado'].includes(nicknameInput.value))) {
+            if (nicknameInput && nicknameInput.dataset.userEdited !== 'true') {
                 nicknameInput.value = t('ui.defaultGuest');
             }
             const select = document.getElementById('room-select');
@@ -1067,9 +1075,19 @@
 
         // --- Init ---
         window.onload = async function () {
+            if (!window.i18n || typeof window.i18n.init !== 'function') {
+                console.error('i18n library failed to load. Please refresh the page or check your connection.');
+                return;
+            }
             await window.i18n.init();
             const languageSelect = document.getElementById('language-select');
             languageSelect.value = window.i18n.language;
+            const nicknameInput = document.getElementById('nickname-input');
+            if (nicknameInput) {
+                nicknameInput.addEventListener('input', () => {
+                    nicknameInput.dataset.userEdited = 'true';
+                });
+            }
             languageSelect.addEventListener('change', async (event) => {
                 await window.i18n.setLanguage(event.target.value);
                 applyTranslations();

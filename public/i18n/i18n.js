@@ -34,8 +34,14 @@
 
     async load(language) {
       if (cache[language]) return cache[language];
-      const response = await fetch(`/i18n/${language}.json`);
-      cache[language] = await response.json();
+      try {
+        const response = await fetch(`/i18n/${language}.json`);
+        if (!response.ok) throw new Error(`Failed to load language file ${language}: HTTP ${response.status}`);
+        cache[language] = await response.json();
+      } catch (error) {
+        console.error(error);
+        cache[language] = {};
+      }
       return cache[language];
     },
 
