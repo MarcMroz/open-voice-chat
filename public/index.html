@@ -7,7 +7,9 @@
     <title>Sesli Sohbet | Güvenli ve Hızlı İletişim</title>
     <script src="/socket.io/socket.io.js"></script>
     <script src="https://unpkg.com/peerjs@1.5.1/dist/peerjs.min.js"></script>
-    <script src="/i18n/i18n.js"></script>
+    <script src="/vendor/i18next.min.js"></script>
+    <script src="/vendor/i18nextHttpBackend.min.js"></script>
+    <script src="/vendor/i18nextBrowserLanguageDetector.min.js"></script>
     <style>
         :root {
             --bg-color: #0a0a0f;
@@ -1005,7 +1007,7 @@
 
         let i18nUnavailableWarned = false;
         const t = (key, params) => {
-            if (window.i18n && typeof window.i18n.t === 'function') return window.i18n.t(key, params);
+            if (window.i18next && typeof window.i18next.t === 'function') return window.i18next.t(key, params);
             if (!i18nUnavailableWarned) {
                 console.warn('i18n is not available; translation keys will be shown instead of localized text.');
                 i18nUnavailableWarned = true;
@@ -1033,6 +1035,7 @@
         }
 
         function applyTranslations() {
+            document.documentElement.lang = window.i18next?.resolvedLanguage || 'tr';
             document.title = t('app.title');
             document.getElementById('https-warning').innerText = t('ui.httpsWarning');
             document.getElementById('notification-toast').innerText = t('ui.micDetected');
@@ -1075,13 +1078,27 @@
 
         // --- Init ---
         window.onload = async function () {
-            if (!window.i18n || typeof window.i18n.init !== 'function') {
+            if (!window.i18next || !window.i18nextHttpBackend || !window.i18nextBrowserLanguageDetector) {
                 console.error('i18n library failed to load. Please refresh the page or check your connection.');
                 return;
             }
-            await window.i18n.init();
+            await window.i18next
+                .use(window.i18nextHttpBackend)
+                .use(window.i18nextBrowserLanguageDetector)
+                .init({
+                    fallbackLng: 'tr',
+                    supportedLngs: ['tr', 'en', 'es'],
+                    load: 'languageOnly',
+                    backend: { loadPath: '/i18n/{{lng}}.json' },
+                    detection: {
+                        order: ['localStorage', 'navigator'],
+                        lookupLocalStorage: 'ovc-lang',
+                        caches: ['localStorage']
+                    },
+                    interpolation: { escapeValue: false }
+                });
             const languageSelect = document.getElementById('language-select');
-            languageSelect.value = window.i18n.language;
+            languageSelect.value = window.i18next.resolvedLanguage || 'tr';
             const nicknameInput = document.getElementById('nickname-input');
             if (nicknameInput) {
                 nicknameInput.addEventListener('input', () => {
@@ -1089,7 +1106,7 @@
                 });
             }
             languageSelect.addEventListener('change', async (event) => {
-                await window.i18n.setLanguage(event.target.value);
+                await window.i18next.changeLanguage(event.target.value);
                 applyTranslations();
                 renderRoomOptions();
                 updateParticipantsList();

@@ -66,6 +66,15 @@ loadRooms();
 // Middleware
 app.use(express.static('public'));
 app.use(express.json());
+app.get('/vendor/i18next.min.js', (req, res) => {
+  res.sendFile(path.join(__dirname, 'node_modules/i18next/dist/umd/i18next.min.js'));
+});
+app.get('/vendor/i18nextHttpBackend.min.js', (req, res) => {
+  res.sendFile(path.join(__dirname, 'node_modules/i18next-http-backend/i18nextHttpBackend.min.js'));
+});
+app.get('/vendor/i18nextBrowserLanguageDetector.min.js', (req, res) => {
+  res.sendFile(path.join(__dirname, 'node_modules/i18next-browser-languagedetector/i18nextBrowserLanguageDetector.min.js'));
+});
 
 // PeerJS Server
 const peerServer = ExpressPeerServer(server, {
