@@ -7,6 +7,9 @@
     <title>Sesli Sohbet | Güvenli ve Hızlı İletişim</title>
     <script src="/socket.io/socket.io.js"></script>
     <script src="https://unpkg.com/peerjs@1.5.1/dist/peerjs.min.js"></script>
+    <script src="/vendor/i18next.min.js"></script>
+    <script src="/vendor/i18nextHttpBackend.min.js"></script>
+    <script src="/vendor/i18nextBrowserLanguageDetector.min.js"></script>
     <style>
         :root {
             --bg-color: #0a0a0f;
@@ -861,8 +864,8 @@
         <h3 id="vote-text" style="margin:0; color:white;">Oy Ver: ...</h3>
         <p style="margin:5px 0; color:#aaa; font-size:12px;" id="vote-subtext">Kullanıcıyı atmak istiyor musunuz?</p>
         <div class="vote-actions" id="vote-buttons">
-            <button class="vote-btn-yes" onclick="submitVote(true)">Evet</button>
-            <button class="vote-btn-no" onclick="submitVote(false)">Hayır</button>
+            <button id="vote-yes-btn" class="vote-btn-yes" onclick="submitVote(true)">Evet</button>
+            <button id="vote-no-btn" class="vote-btn-no" onclick="submitVote(false)">Hayır</button>
         </div>
         <div id="vote-status" style="display:none; margin-top:15px; font-weight:bold; color:#ccc;">
             Oyunuz alındı, sonuç bekleniyor...
@@ -875,7 +878,7 @@
     <!-- Login -->
     <div id="login-overlay">
         <div class="login-box">
-            <h2>🎙️ Sesli Sohbet</h2>
+            <h2 id="login-title">🎙️ Sesli Sohbet</h2>
             <input type="text" id="nickname-input" placeholder="Kullanıcı Adı" value="Misafir">
             <select id="room-select" onchange="checkRoomLock()">
                 <option value="" disabled selected>Odalar Yükleniyor...</option>
@@ -884,7 +887,17 @@
             <button id="join-btn" onclick="startApp()">Odaya Katıl</button>
             <div class="settings-area" style="justify-content: center;">
                 <label class="checkbox-wrapper">
-                    <input type="checkbox" id="sound-toggle-login" checked> 🔊 Bildirim Sesleri
+                    <input type="checkbox" id="sound-toggle-login" checked> <span id="notification-sounds-label">🔊 Bildirim Sesleri</span>
+                </label>
+            </div>
+            <div class="settings-area" style="justify-content: center;">
+                <label class="checkbox-wrapper">
+                    🌐
+                    <select id="language-select" style="margin:0 0 0 8px; padding:6px 8px;">
+                        <option value="tr">Türkçe</option>
+                        <option value="en">English</option>
+                        <option value="es">Español</option>
+                    </select>
                 </label>
             </div>
         </div>
@@ -898,7 +911,7 @@
             <header>
                 <div style="display:flex; align-items:center; gap:15px;">
                     <h3 id="room-display" style="margin:0">Oda: ...</h3>
-                    <label class="checkbox-wrapper" title="Giriş/Çıkış Sesleri" style="margin:0; padding:4px 8px;">
+                    <label class="checkbox-wrapper" id="sound-toggle-main-label" title="Giriş/Çıkış Sesleri" style="margin:0; padding:4px 8px;">
                         <input type="checkbox" id="sound-toggle-main" checked onchange="syncSoundToggle(this)"> 🔔
                     </label>
                 </div>
@@ -911,7 +924,7 @@
                     <button onclick="toggleMyMute()" id="my-mute-btn" style="width:auto; margin:0; padding:8px 16px;">
                         🎤 Sustur
                     </button>
-                    <button onclick="window.location.reload()" style="background:linear-gradient(135deg, var(--danger-color), #dc2626); width:auto; margin:0; padding:8px 16px;">
+                    <button id="leave-btn" onclick="window.location.reload()" style="background:linear-gradient(135deg, var(--danger-color), #dc2626); width:auto; margin:0; padding:8px 16px;">
                         🚪 Ayrıl
                     </button>
                 </div>
@@ -934,9 +947,9 @@
         <div id="chat-panel">
             <!-- Tab Navigation -->
             <div class="chat-tabs">
-                <button class="chat-tab active" onclick="switchTab('chat')">💬 Sohbet</button>
-                <button class="chat-tab" onclick="switchTab('participants')">👥 Katılımcılar (<span id="participant-count">0</span>)</button>
-                <button class="chat-tab" onclick="switchTab('reactions')">😂 Tepkiler</button>
+                <button class="chat-tab active" id="chat-tab-btn" onclick="switchTab('chat')">💬 Sohbet</button>
+                <button class="chat-tab" id="participants-tab-btn" onclick="switchTab('participants')"><span id="participants-tab-label">👥 Katılımcılar</span> (<span id="participant-count">0</span>)</button>
+                <button class="chat-tab" id="reactions-tab-btn" onclick="switchTab('reactions')">😂 Tepkiler</button>
             </div>
 
             <!-- Chat Tab Content -->
@@ -946,7 +959,7 @@
                 </div>
                 <div id="chat-input-area">
                     <input type="text" id="message-input" placeholder="Bir mesaj yaz..." onkeypress="handleEnter(event)">
-                    <button onclick="sendMessage()" style="width: auto; margin:0;">Gönder</button>
+                    <button id="send-btn" onclick="sendMessage()" style="width: auto; margin:0;">Gönder</button>
                 </div>
             </div>
 
@@ -985,14 +998,127 @@
         let mixedAudioStream = null;  // Mixed Stream (Mic + System)
         let availableRooms = [];
         let myNickname = "Misafir";
+        let currentRoomName = '';
         let soundsEnabled = true;
         let isListener = false;
         const nicknames = {};
         const activeCalls = {}; // Keep track of active MediaConnections
         let currentScreenSharerId = null; // Track who is sharing screen
 
+        let i18nUnavailableWarned = false;
+        const t = (key, params) => {
+            if (window.i18next && typeof window.i18next.t === 'function') return window.i18next.t(key, params);
+            if (!i18nUnavailableWarned) {
+                console.warn('i18next is not available; translation keys will be shown instead of localized text.');
+                i18nUnavailableWarned = true;
+            }
+            return key;
+        };
+
+        function updateRoomDisplay() {
+            const roomDisplay = document.getElementById('room-display');
+            if (roomDisplay) roomDisplay.innerText = `${t('ui.roomPrefix')}: ${currentRoomName || '...'}`;
+        }
+
+        function renderRoomOptions() {
+            const select = document.getElementById('room-select');
+            if (!select) return;
+            const selectedValue = select.value;
+            select.innerHTML = `<option value="" disabled selected>${t('ui.roomSelect')}</option>`;
+            availableRooms.forEach(r => {
+                const opt = document.createElement('option');
+                opt.value = r.id;
+                opt.innerText = r.isLocked ? `🔒 ${r.name}` : r.name;
+                select.appendChild(opt);
+            });
+            if (selectedValue) select.value = selectedValue;
+        }
+
+        function applyTranslations() {
+            if (!window.i18next) return;
+            document.documentElement.lang = window.i18next.resolvedLanguage || 'tr';
+            document.title = t('app.title');
+            document.getElementById('https-warning').innerText = t('ui.httpsWarning');
+            document.getElementById('notification-toast').innerText = t('ui.micDetected');
+            document.getElementById('vote-text').innerText = t('ui.voteTitleDefault');
+            document.getElementById('vote-subtext').innerText = t('ui.voteSubtext');
+            document.getElementById('vote-yes-btn').innerText = t('ui.yes');
+            document.getElementById('vote-no-btn').innerText = t('ui.no');
+            document.getElementById('vote-status').innerText = t('ui.voteWaiting');
+            document.getElementById('login-title').innerText = `🎙️ ${t('ui.loginTitle')}`;
+            document.getElementById('nickname-input').placeholder = t('ui.nicknamePlaceholder');
+            document.getElementById('password-input').placeholder = t('ui.passwordPlaceholder');
+            document.getElementById('join-btn').innerText = t('ui.joinRoom');
+            document.getElementById('notification-sounds-label').innerText = t('ui.notificationSounds');
+            document.getElementById('sound-toggle-main-label').title = t('ui.entrySounds');
+            document.getElementById('btn-share-screen-header').innerText = t('ui.shareScreen');
+            document.getElementById('btn-share-screen-header').title = t('ui.shareScreen');
+            document.getElementById('my-mute-btn').innerText = t('ui.mute');
+            document.getElementById('leave-btn').innerText = t('ui.leave');
+            document.getElementById('screen-stage-label').innerText = t('ui.screenShareStage');
+            document.getElementById('fullscreen-btn').innerText = t('ui.fullscreen');
+            document.getElementById('chat-tab-btn').innerText = t('ui.tabs.chat');
+            document.getElementById('participants-tab-label').innerText = t('ui.tabs.participants');
+            document.getElementById('reactions-tab-btn').innerText = t('ui.tabs.reactions');
+            const chatMessages = document.getElementById('chat-messages');
+            if (chatMessages && chatMessages.querySelectorAll('.message').length === 0) {
+                chatMessages.innerHTML = `<div class="msg-system">${t('ui.chatWelcome')}</div>`;
+            }
+            document.getElementById('message-input').placeholder = t('ui.messagePlaceholder');
+            document.getElementById('send-btn').innerText = t('ui.send');
+            const nicknameInput = document.getElementById('nickname-input');
+            if (nicknameInput && nicknameInput.dataset.userEdited !== 'true') {
+                nicknameInput.value = t('ui.defaultGuest');
+            }
+            const select = document.getElementById('room-select');
+            if (select && select.options.length <= 1) {
+                select.innerHTML = `<option value="" disabled selected>${t('ui.roomLoading')}</option>`;
+            }
+            updateRoomDisplay();
+        }
+
         // --- Init ---
         window.onload = async function () {
+            if (!window.i18next || !window.i18nextHttpBackend || !window.i18nextBrowserLanguageDetector) {
+                console.error('Required i18next libraries failed to load. Please refresh the page or check your connection.');
+                return;
+            }
+            await window.i18next
+                .use(window.i18nextHttpBackend)
+                .use(window.i18nextBrowserLanguageDetector)
+                .init({
+                    fallbackLng: 'tr',
+                    supportedLngs: ['tr', 'en', 'es'],
+                    load: 'languageOnly',
+                    // Translation files are served from /i18n/{lng}.json
+                    backend: { loadPath: '/i18n/{{lng}}.json' },
+                    detection: {
+                        order: ['localStorage', 'navigator'],
+                        lookupLocalStorage: 'ovc-lang',
+                        caches: ['localStorage']
+                    },
+                    interpolation: { escapeValue: false }
+                });
+            const languageSelect = document.getElementById('language-select');
+            languageSelect.value = window.i18next.resolvedLanguage || 'tr';
+            const nicknameInput = document.getElementById('nickname-input');
+            if (nicknameInput) {
+                nicknameInput.addEventListener('input', () => {
+                    nicknameInput.dataset.userEdited = 'true';
+                });
+            }
+            languageSelect.addEventListener('change', async (event) => {
+                await window.i18next.changeLanguage(event.target.value);
+                applyTranslations();
+                renderRoomOptions();
+                updateParticipantsList();
+                if (localScreenStream && myPeer) {
+                    const stageLabel = document.getElementById('screen-stage-label');
+                    stageLabel.innerText = t('ui.stageSharing', { name: myNickname });
+                }
+            });
+            applyTranslations();
+
             // HTTPS/Localhost Kontrolü
             if (!window.isSecureContext) {
                 document.getElementById('https-warning').style.display = 'block';
@@ -1008,14 +1134,7 @@
             try {
                 const res = await fetch('/rooms');
                 availableRooms = await res.json();
-                const select = document.getElementById('room-select');
-                select.innerHTML = '<option value="" disabled selected>Oda Seçiniz</option>';
-                availableRooms.forEach(r => {
-                    const opt = document.createElement('option');
-                    opt.value = r.id;
-                    opt.innerText = r.isLocked ? `🔒 ${r.name}` : r.name;
-                    select.appendChild(opt);
-                });
+                renderRoomOptions();
             } catch (e) { console.error("Odalar yüklenemedi", e); }
 
             // Device Change Listener (Hot-plugging)
@@ -1072,7 +1191,7 @@
                 list.innerHTML = '';
                 
                 if (reactions.length === 0) {
-                    list.innerHTML = '<div style="text-align:center; color:#666; padding:20px;">Henüz tepki eklenmemiş</div>';
+                    list.innerHTML = `<div style="text-align:center; color:#666; padding:20px;">${t('ui.reactionsEmpty')}</div>`;
                     return;
                 }
                 
@@ -1120,7 +1239,7 @@
                 audio.play().catch(e => console.log("Reaction play blocked", e));
                 
                 // Show notification in chat
-                addSystemMsg(`${userName} bir tepki gönderdi 🎵`);
+                addSystemMsg(t('ui.reactionSent', { user: userName }));
             } catch (err) {
                 console.error('Error playing reaction:', err);
             }
@@ -1147,9 +1266,9 @@
                     <img src="${avatarUrl}" class="participant-avatar" alt="Avatar">
                     <div class="participant-info">
                         <div class="participant-name">${myNickname} ${isSharing ? '🖥️' : ''}</div>
-                        <div class="participant-status">${isListener ? '🔇 Dinleyici' : '🎤 Konuşuyor'}</div>
+                        <div class="participant-status">${isListener ? t('ui.participantStatus.listener') : t('ui.participantStatus.speaking')}</div>
                     </div>
-                    <span class="participant-badge">SEN</span>
+                    <span class="participant-badge">${t('ui.youBadge')}</span>
                 `;
                 list.appendChild(item);
             }
@@ -1168,7 +1287,7 @@
                     <img src="${avatarUrl}" class="participant-avatar" alt="Avatar">
                     <div class="participant-info">
                         <div class="participant-name">${name} ${isSharing ? '🖥️' : ''}</div>
-                        <div class="participant-status">🎤 Bağlı</div>
+                        <div class="participant-status">${t('ui.participantStatus.connected')}</div>
                     </div>
                 `;
                 list.appendChild(item);
@@ -1192,14 +1311,14 @@
 
         // --- Core Logic ---
         async function startApp() {
-            myNickname = document.getElementById('nickname-input').value.trim() || "Misafir";
+            myNickname = document.getElementById('nickname-input').value.trim() || t('ui.defaultGuest');
             const roomId = document.getElementById('room-select').value;
             const password = document.getElementById('password-input').value;
 
-            if (!roomId) return alert("Lütfen bir oda seçin!");
+            if (!roomId) return alert(t('ui.selectRoom'));
 
             const joinBtn = document.getElementById('join-btn');
-            joinBtn.innerText = "Bağlanıyor...";
+            joinBtn.innerText = t('ui.connecting');
             joinBtn.disabled = true;
 
             try {
@@ -1210,7 +1329,7 @@
                 console.warn("Mikrofon hatası:", err);
 
                 // Eğer mikrofon bulunamazsa (NotFoundError) veya erişim reddedilirse
-                const proceed = confirm(`Mikrofon bulunamadı veya izin verilmedi (${err.name}).\n\nSadece DİNLEYİCİ olarak katılmak ister misiniz?`);
+                const proceed = confirm(t('ui.micErrorConfirm', { error: err.name }));
 
                 if (proceed) {
                     // Boş (Sessiz) bir ses kanalı oluştur (Dummy Stream)
@@ -1225,7 +1344,7 @@
                     document.getElementById('my-mute-btn').style.display = 'none';
                 } else {
                     joinBtn.disabled = false;
-                    joinBtn.innerText = "Odaya Katıl";
+                    joinBtn.innerText = t('ui.joinRoom');
                     return;
                 }
             }
@@ -1250,7 +1369,7 @@
                     activeCalls[call.peer] = call;
 
                     call.on('stream', stream => {
-                        const name = nicknames[call.peer] || "Misafir";
+                        const name = nicknames[call.peer] || t('ui.defaultGuest');
                         addUser(stream, call.peer, name);
                     });
 
@@ -1272,13 +1391,13 @@
 
                 myPeer.on('error', e => {
                     console.error("Peer Error", e);
-                    if (e.type !== 'peer-unavailable') alert("Bağlantı Hatası: " + e.type);
+                    if (e.type !== 'peer-unavailable') alert(t('ui.connectionError', { error: e.type }));
                 });
 
             } catch (err) {
-                alert("Bağlantı başlatılamadı: " + err.message);
+                alert(t('ui.connectionStartFailed', { error: err.message }));
                 joinBtn.disabled = false;
-                joinBtn.innerText = "Odaya Katıl";
+                joinBtn.innerText = t('ui.joinRoom');
             }
         }
 
@@ -1302,16 +1421,17 @@
                 document.getElementById('app-container').style.display = 'flex';
 
                 const roomName = availableRooms.find(r => r.id === rId)?.name || rId;
-                document.getElementById('room-display').innerText = `Oda: ${roomName}`;
+                currentRoomName = roomName;
+                updateRoomDisplay();
 
                 // Add system message
                 const box = document.getElementById('chat-messages');
-                box.innerHTML = `<div class="msg-system">Sohbete hoş geldiniz, <b>${myNickname}</b>!</div>`;
+                box.innerHTML = `<div class="msg-system">${t('ui.chatWelcomeNamed', { name: myNickname })}</div>`;
 
                 // Kendi kartımızı ekle
                 addUser(myStream, id, myNickname, true);
 
-                addSystemMsg(`${roomId} odasına katıldınız`);
+                addSystemMsg(t('ui.joinedRoom', { room: roomId }));
                 playSound('join');
                 updateParticipantsList();
                 loadReactions();
@@ -1325,11 +1445,11 @@
                 updateParticipantsList();
             });
 
-            socket.on('error', msg => { alert("Hata: " + msg); window.location.reload(); });
+            socket.on('error', msg => { alert(t('ui.errorPrefix', { error: msg })); window.location.reload(); });
 
             socket.on('user-connected', (uid, name) => {
                 nicknames[uid] = name;
-                addSystemMsg(`${name} odaya katıldı`);
+                addSystemMsg(t('ui.userJoined', { name }));
                 playSound('join');
                 updateParticipantsList();
                 // Yeni geleni biz arıyoruz
@@ -1362,8 +1482,8 @@
             });
 
             socket.on('user-disconnected', uid => {
-                const userName = nicknames[uid] || "Kullanıcı";
-                addSystemMsg(`${userName} odadan ayrıldı`);
+                const userName = nicknames[uid] || t('ui.defaultUser');
+                addSystemMsg(t('ui.userLeft', { name: userName }));
                 removeUser(uid);
                 delete nicknames[uid];
                 updateParticipantsList();
@@ -1381,7 +1501,7 @@
 
             socket.on('kick-user', (targetId) => {
                 if (myPeer && targetId === myPeer.id) {
-                    alert("Oy birliği ile odadan atıldınız.");
+                    alert(t('ui.kickedByVote'));
                     window.location.reload();
                 }
             });
@@ -1405,7 +1525,7 @@
             });
 
             socket.on('share-denied', () => {
-                alert("Şu anda başkası ekran paylaşıyor. Lütfen bekleyin.");
+                alert(t('ui.shareDenied'));
                 // Reset button state
                 const btn = document.getElementById('btn-share-screen-header');
                 if (btn) btn.classList.remove('loading'); // If we had loading state
@@ -1419,7 +1539,7 @@
 
         // --- Vote UI ---
         function startVote(targetId, targetName) {
-            if (!confirm(`${targetName} için oylama başlatılsın mı? (Bu isim spam yapıyorsa deneyin)`)) return;
+            if (!confirm(t('ui.kickConfirm', { name: targetName }))) return;
             socket.emit('start-vote', targetId);
         }
 
@@ -1430,13 +1550,13 @@
             const status = document.getElementById('vote-status');
             const subtext = document.getElementById('vote-subtext');
 
-            document.getElementById('vote-text').innerText = `${targetName} atılsın mı?`;
+            document.getElementById('vote-text').innerText = t('ui.voteTargetQuestion', { name: targetName });
 
             // Checks for Target
             if (myPeer && targetId === myPeer.id) {
                 buttons.style.display = 'none';
                 status.style.display = 'block';
-                status.innerText = "Hakkınızda oylama yapılıyor...";
+                status.innerText = t('ui.voteInProgress');
                 status.style.color = 'var(--danger-color)';
             } else {
                 buttons.style.display = 'flex';
@@ -1445,7 +1565,7 @@
 
             // Reset UI for normal voters
             if (myPeer && targetId !== myPeer.id) {
-                subtext.innerText = "Kullanıcıyı atmak istiyor musunuz?";
+                subtext.innerText = t('ui.voteSubtext');
             }
 
             modal.style.display = 'block';
@@ -1460,7 +1580,7 @@
             document.getElementById('vote-buttons').style.display = 'none';
             const status = document.getElementById('vote-status');
             status.style.display = 'block';
-            status.innerText = "Oyunuz alındı, sonuç bekleniyor...";
+            status.innerText = t('ui.voteWaiting');
             status.style.color = '#ccc';
         }
 
@@ -1552,7 +1672,7 @@
             let controlsHtml = '';
             if (!isMe) {
                 controlsHtml = `
-                    <button class="kick-btn" title="Oylama Başlat" onclick="startVote('${uid}', '${name}')">⚠️</button>
+                    <button class="kick-btn" title="${t('ui.kickVoteTitle')}" onclick="startVote('${uid}', '${name}')">⚠️</button>
                     <div class="user-controls">
                         <button class="mute-btn-small" onclick="toggleUserMute('${uid}')" id="mute-btn-${uid}">🔊</button>
                         <input type="range" min="0" max="1" step="0.1" value="1" oninput="setVolume('${uid}', this.value)">
@@ -1560,7 +1680,7 @@
                 `;
             } else {
                 // Self Controls
-                const statusText = isListener ? "( Ben - 🔇 Dinleyici )" : "( Ben )";
+                const statusText = isListener ? t('ui.selfStatusListener') : t('ui.selfStatus');
 
                 // Show screen share button in header if not mobile and not listener
                 const isMobile = !navigator.mediaDevices || !navigator.mediaDevices.getDisplayMedia;
@@ -1655,11 +1775,11 @@
 
                 const btn = document.getElementById('my-mute-btn');
                 if (enabled) {
-                    btn.innerText = "🎤 Sustur";
+                    btn.innerText = t('ui.mute');
                     btn.style.background = "linear-gradient(135deg, var(--accent-color), var(--accent-secondary))";
                     btn.style.color = "#fff";
                 } else {
-                    btn.innerText = "🔴 Sesi Aç";
+                    btn.innerText = t('ui.unmute');
                     btn.style.background = "linear-gradient(135deg, var(--danger-color), #dc2626)";
                     btn.style.color = "#fff";
                 }
@@ -1725,7 +1845,7 @@
                     // No System Audio, Just Mic
                     finalAudioTrack = micAudioTracks[0];
                 } else {
-                    alert("Ses kaynağı bulunamadı (Mikrofon erişimi yok).");
+                    alert(t('ui.noAudioSource'));
                     socket.emit('stop-share');
                     return;
                 }
@@ -1745,7 +1865,7 @@
                 enableStage(localScreenStream, myNickname, myPeer.id);
 
                 if (btn) {
-                    btn.innerText = "⏹️ Paylaşımı Durdur";
+                    btn.innerText = t('ui.stopShare');
                     btn.style.background = "linear-gradient(135deg, var(--danger-color), #dc2626)";
                 }
 
@@ -1787,7 +1907,7 @@
             // 5. Reset Button
             const btn = document.getElementById('btn-share-screen-header');
             if (btn) {
-                btn.innerText = "🖥️ Ekran Paylaş";
+                btn.innerText = t('ui.shareScreen');
                 btn.style.background = "";
             }
 
@@ -1808,7 +1928,7 @@
             stage.style.display = 'flex';
             video.srcObject = new MediaStream(stream.getVideoTracks()); // Video Only for stage
             video.muted = true; // Audio is handled via separate audio element or user card
-            label.innerText = `🖥️ ${userName} Ekranını Paylaşıyor`;
+            label.innerText = t('ui.stageSharing', { name: userName });
 
             mainContent.classList.add('stage-active');
             currentStageId = uid;
@@ -1845,7 +1965,7 @@
                 } else if (stage.webkitRequestFullscreen) {
                     stage.webkitRequestFullscreen();
                 }
-                btn.innerText = '✕ Çık';
+                btn.innerText = t('ui.fullscreenExit');
             } else {
                 // Exit fullscreen
                 if (document.exitFullscreen) {
@@ -1853,7 +1973,7 @@
                 } else if (document.webkitExitFullscreen) {
                     document.webkitExitFullscreen();
                 }
-                btn.innerText = '⛶ Tam Ekran';
+                btn.innerText = t('ui.fullscreen');
             }
         }
 
@@ -1861,14 +1981,14 @@
         document.addEventListener('fullscreenchange', () => {
             const btn = document.getElementById('fullscreen-btn');
             if (btn) {
-                btn.innerText = document.fullscreenElement ? '✕ Çık' : '⛶ Tam Ekran';
+                btn.innerText = document.fullscreenElement ? t('ui.fullscreenExit') : t('ui.fullscreen');
             }
         });
 
         document.addEventListener('webkitfullscreenchange', () => {
             const btn = document.getElementById('fullscreen-btn');
             if (btn) {
-                btn.innerText = document.webkitFullscreenElement ? '✕ Çık' : '⛶ Tam Ekran';
+                btn.innerText = document.webkitFullscreenElement ? t('ui.fullscreenExit') : t('ui.fullscreen');
             }
         });
 
@@ -1879,7 +1999,7 @@
             if (myPeer && myPeer.id === sharerId) return; // Don't lock for self (handled by state)
 
             btn.disabled = true;
-            btn.title = "Başka biri ekran paylaşıyor";
+            btn.title = t('ui.shareLockedTitle');
             btn.style.opacity = '0.5';
             btn.style.cursor = 'not-allowed';
         }
@@ -1889,7 +2009,7 @@
             if (!btn) return;
 
             btn.disabled = false;
-            btn.title = "Ekran Paylaş";
+            btn.title = t('ui.shareScreen');
             btn.style.opacity = '1';
             btn.style.cursor = 'pointer';
         }
