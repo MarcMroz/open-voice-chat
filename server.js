@@ -14,6 +14,9 @@ const path = require('path');
 const fs = require('fs');
 
 const PORT = process.env.PORT || 3000;
+const ALLOWED_REACTION_AGES = ['base', 'adult'];
+const REQUESTED_DEFAULT_REACTION_AGE = String(process.env.REACTIONS_AGE || 'base').toLowerCase();
+const DEFAULT_REACTION_AGE = ALLOWED_REACTION_AGES.includes(REQUESTED_DEFAULT_REACTION_AGE) ? REQUESTED_DEFAULT_REACTION_AGE : 'base';
 
 // Global State
 const roomUsers = {};           // { roomId: { peerId: "Nickname" } }
@@ -98,15 +101,41 @@ app.get('/rooms', (req, res) => {
   res.json(sanitizedRooms);
 });
 
-// API: Get Reactions (Tepkiler)
-app.get('/api/tepkiler', (req, res) => {
+function getReactionFilesFromDir(baseDir, relativeDir) {
+  const dirPath = path.join(baseDir, relativeDir);
+  if (!fs.existsSync(dirPath)) return [];
+  return fs.readdirSync(dirPath)
+    .filter(file => file.endsWith('.mp3'))
+    .map(file => ({ file, relativeDir }));
+}
+
+function getSupportedReactionLanguages(reactionsPath) {
+  if (!fs.existsSync(reactionsPath)) return [];
+  return fs.readdirSync(reactionsPath).filter(dirName => {
+    const fullPath = path.join(reactionsPath, dirName);
+    return dirName !== 'base' && fs.statSync(fullPath).isDirectory();
+  });
+}
+
+// API: Get Reactions
+function getReactions(req, res) {
   try {
-    const tepkilerPath = path.join(__dirname, 'public/tepkiler');
-    const files = fs.readdirSync(tepkilerPath);
+    const reactionsPath = path.join(__dirname, 'public/reactions');
+    const rawLanguage = String(req.query.lang || '').toLowerCase();
+    const requestedLanguage = rawLanguage ? rawLanguage.split('-')[0] : '';
+    const supportedLanguages = getSupportedReactionLanguages(reactionsPath);
+    const language = supportedLanguages.includes(requestedLanguage) ? requestedLanguage : 'en';
+    const requestedAge = String(req.query.age || DEFAULT_REACTION_AGE).toLowerCase();
+    const age = ALLOWED_REACTION_AGES.includes(requestedAge) ? requestedAge : 'base';
+
+    const files = [
+      ...getReactionFilesFromDir(reactionsPath, 'base'),
+      ...getReactionFilesFromDir(reactionsPath, `${language}/base`),
+      ...(age === 'adult' ? getReactionFilesFromDir(reactionsPath, `${language}/adult`) : [])
+    ];
     
     const reactions = files
-      .filter(file => file.endsWith('.mp3'))
-      .map(file => {
+      .map(({ file, relativeDir }) => {
         // Convert filename to display name
         // "ya-sabir.mp3" -> "Ya Sabir"
         const nameWithoutExt = file.replace('.mp3', '');
@@ -116,9 +145,9 @@ app.get('/api/tepkiler', (req, res) => {
           .join(' ');
         
         return {
-          id: file,
+          id: `${relativeDir}/${file}`,
           name: displayName,
-          url: `/tepkiler/${file}`
+          url: `/reactions/${relativeDir}/${file}`
         };
       });
     
@@ -127,7 +156,10 @@ app.get('/api/tepkiler', (req, res) => {
     console.error('Error loading reactions:', err);
     res.json([]);
   }
-});
+}
+
+app.get('/api/reactions', getReactions);
+app.get('/api/tepkiler', getReactions);
 
 app.get('/*', (req, res) => {
   res.sendFile(path.join(__dirname, 'public/index.html'));
