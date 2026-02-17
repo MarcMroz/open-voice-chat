@@ -106,7 +106,7 @@ By default, rooms and passwords are loaded from `config/rooms.json`.
 ]
 ```
 
-For **Azure Web App** deployments, set `ROOMS_JSON` in **App Settings** so passwords are not stored in repository files:
+For production deployments (e.g., **Azure Web App**), set `ROOMS_JSON` in environment/app settings so passwords are not stored in repository files:
 
 ```env
 ROOMS_JSON=[{"id":"lobby","name":"Lobby (Public)","password":null},{"id":"vip","name":"VIP Room (Private)","password":"your-strong-password"}]
