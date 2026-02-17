@@ -1202,7 +1202,7 @@
             const okBtn = document.getElementById('app-popup-ok-btn');
             const cancelBtn = document.getElementById('app-popup-cancel-btn');
 
-            msg.innerText = message;
+            msg.textContent = message;
             okBtn.innerText = t('ui.ok');
             cancelBtn.innerText = t('ui.cancel');
             cancelBtn.style.display = requireDecision ? 'inline-block' : 'none';
