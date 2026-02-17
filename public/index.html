@@ -1155,13 +1155,13 @@
                     supportedLngs: ['tr', 'en', 'es'],
                     load: 'languageOnly',
                     // Translation files are served from /i18n/{lng}.json
-                    backend: { loadPath: '/i18n/{{lng}}.json' },
+                    backend: { loadPath: '/i18n/{lng}.json' },
                     detection: {
                         order: ['localStorage', 'navigator'],
                         lookupLocalStorage: 'ovc-lang',
                         caches: ['localStorage']
                     },
-                    interpolation: { escapeValue: false }
+                    interpolation: { escapeValue: true, prefix: '{', suffix: '}' }
                 });
             const languageSelect = document.getElementById('language-select');
             languageSelect.value = window.i18next.resolvedLanguage || 'tr';
