@@ -1038,12 +1038,7 @@
 
         let i18nUnavailableWarned = false;
         const t = (key, params) => {
-            if (window.i18next && typeof window.i18next.t === 'function') {
-                return window.i18next.t(key, {
-                    ...(params || {}),
-                    interpolation: { escapeValue: true, prefix: '{', suffix: '}' }
-                });
-            }
+            if (window.i18next && typeof window.i18next.t === 'function') return window.i18next.t(key, params);
             if (!i18nUnavailableWarned) {
                 console.warn('i18next is not available; translation keys will be shown instead of localized text.');
                 i18nUnavailableWarned = true;
@@ -1150,13 +1145,13 @@
                     supportedLngs: ['tr', 'en', 'es'],
                     load: 'languageOnly',
                     // Translation files are served from /i18n/{lng}.json
-                    backend: { loadPath: '/i18n/{{lng}}.json' },
+                    backend: { loadPath: '/i18n/{lng}.json' },
                     detection: {
                         order: ['localStorage', 'navigator'],
                         lookupLocalStorage: 'ovc-lang',
                         caches: ['localStorage']
                     },
-                    interpolation: { escapeValue: false }
+                    interpolation: { escapeValue: true, prefix: '{', suffix: '}' }
                 });
             const languageSelect = document.getElementById('language-select');
             languageSelect.value = window.i18next.resolvedLanguage || 'tr';
