@@ -7,7 +7,7 @@ All notable changes to this project will be documented in this file.
 ### Added
 - 🎨 **Modern UI Design**: Complete redesign with purple/cyan gradient theme
 - 😂 **Reaction System**: Share sound effects with everyone in the room
-  - Dynamic MP3 loading from `public/tepkiler/` folder
+  - Dynamic MP3 loading from `public/reactions/` folders
   - Smart filename parsing (e.g., `ya-sabir.mp3` → "Ya Sabir")
   - Single reaction playback at a time (prevents audio overlap)
 - 👥 **Tabbed Interface**: Chat, Participants, and Reactions tabs

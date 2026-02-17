@@ -1189,7 +1189,8 @@
 
         async function loadReactions() {
             try {
-                const response = await fetch('/api/tepkiler');
+                const language = (i18next.language || 'en').split('-')[0];
+                const response = await fetch(`/api/reactions?lang=${encodeURIComponent(language)}`);
                 const reactions = await response.json();
                 
                 const list = document.getElementById('reactions-list');

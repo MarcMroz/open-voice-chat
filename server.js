@@ -98,15 +98,29 @@ app.get('/rooms', (req, res) => {
   res.json(sanitizedRooms);
 });
 
-// API: Get Reactions (Tepkiler)
-app.get('/api/tepkiler', (req, res) => {
+function getReactionFilesFromDir(baseDir, relativeDir) {
+  const dirPath = path.join(baseDir, relativeDir);
+  if (!fs.existsSync(dirPath)) return [];
+  return fs.readdirSync(dirPath)
+    .filter(file => file.endsWith('.mp3'))
+    .map(file => ({ file, relativeDir }));
+}
+
+// API: Get Reactions
+function getReactions(req, res) {
   try {
-    const tepkilerPath = path.join(__dirname, 'public/tepkiler');
-    const files = fs.readdirSync(tepkilerPath);
+    const reactionsPath = path.join(__dirname, 'public/reactions');
+    const language = (req.query.lang || 'en').toLowerCase().split('-')[0];
+    const age = (req.query.age || 'all').toLowerCase();
+
+    const files = [
+      ...getReactionFilesFromDir(reactionsPath, 'base'),
+      ...getReactionFilesFromDir(reactionsPath, `${language}/base`),
+      ...(age === 'adult' || age === 'all' ? getReactionFilesFromDir(reactionsPath, `${language}/adult`) : [])
+    ];
     
     const reactions = files
-      .filter(file => file.endsWith('.mp3'))
-      .map(file => {
+      .map(({ file, relativeDir }) => {
         // Convert filename to display name
         // "ya-sabir.mp3" -> "Ya Sabir"
         const nameWithoutExt = file.replace('.mp3', '');
@@ -116,9 +130,9 @@ app.get('/api/tepkiler', (req, res) => {
           .join(' ');
         
         return {
-          id: file,
+          id: `${relativeDir}/${file}`,
           name: displayName,
-          url: `/tepkiler/${file}`
+          url: `/reactions/${relativeDir}/${file}`
         };
       });
     
@@ -127,7 +141,10 @@ app.get('/api/tepkiler', (req, res) => {
     console.error('Error loading reactions:', err);
     res.json([]);
   }
-});
+}
+
+app.get('/api/reactions', getReactions);
+app.get('/api/tepkiler', getReactions);
 
 app.get('/*', (req, res) => {
   res.sendFile(path.join(__dirname, 'public/index.html'));

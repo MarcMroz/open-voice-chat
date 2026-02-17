@@ -120,10 +120,12 @@ Place your MP3 files in `public/sounds/`:
 - `disconnect.mp3` - Played when someone leaves
 
 ### Reaction Sounds
-Add MP3 files to `public/tepkiler/` for custom reactions:
+Add MP3 files to `public/reactions/` for custom reactions:
+- Shared base sounds for all languages: `public/reactions/base/`
+- Language-specific sounds: `public/reactions/<language>/base/` and `public/reactions/<language>/adult/`
+- The app always includes global base sounds and then loads sounds from the selected language pack
 - File: `ya-sabir.mp3` → Displays as: **"Ya Sabir"**
 - File: `vine-boom.mp3` → Displays as: **"Vine Boom"**
-- Automatically scanned and loaded on startup
 
 **Naming Convention:** Use hyphens (`-`) to separate words. First letter of each word will be capitalized.
 
@@ -144,7 +146,7 @@ For **Azure Web App (Code)** deployments, do not hardcode a port in Azure. The p
 2. **Voice Chat:** Your microphone is automatically enabled (grant browser permission)
 3. **Screen Share:** Click the screen share button in the header
 4. **Fullscreen Mode:** Double-click the shared screen or use the fullscreen button
-5. **Send Reactions:** Switch to "Tepkiler" tab and click any reaction sound
+5. **Send Reactions:** Switch to the "Reactions" tab and click any reaction sound
 6. **Text Chat:** Use the "Sohbet" tab to send text messages
 7. **View Participants:** Switch to "Katılımcılar" tab to see who's online
 8. **Vote Kick:** Click the ⚠️ button on any user card to start a vote
