@@ -126,6 +126,8 @@ You can configure the port in the `.env` file (create it if it doesn't exist):
 PORT=3000
 ```
 
+For **Azure Web App (Code)** deployments, do not hardcode a port in Azure. The platform injects `PORT` automatically and the app listens to it.
+
 ---
 
 ## 🎮 Usage
