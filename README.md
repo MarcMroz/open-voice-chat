@@ -44,6 +44,7 @@
 - 🔊 **Sound Notifications:** Join/leave notifications with custom MP3 support.
 - 🎤 **Listener Mode:** Join as listener if no microphone is available.
 - 🔇 **Individual Controls:** Mute/unmute others and adjust individual volume levels.
+- 🔇 **Noise Suppression:** Built-in noise suppression to filter out keyboard clicks, mouse clicks, and background noise.
 
 ### Technical Features
 - 🌐 **Multi-room Support:** Create and manage multiple rooms with optional passwords.
