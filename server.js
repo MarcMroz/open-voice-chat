@@ -258,15 +258,17 @@ io.on('connection', socket => {
     });
 
     socket.on('rename-user', (nextNickname) => {
+      if (!roomUsers[roomId]) return;
       const requestedName = String(nextNickname || '').trim();
       if (!requestedName) return;
 
       let safeNewName = requestedName;
-      const existingNames = Object.entries(roomUsers[roomId])
+      let suffix = 1;
+      const existingNames = new Set(Object.entries(roomUsers[roomId])
         .filter(([id]) => id !== peerId)
-        .map(([, name]) => name);
-      while (existingNames.includes(safeNewName)) {
-        safeNewName = `${requestedName}_${Math.floor(Math.random() * 1000)}`;
+        .map(([, name]) => name));
+      while (existingNames.has(safeNewName)) {
+        safeNewName = `${requestedName}_${suffix++}`;
       }
 
       nickname = safeNewName;
