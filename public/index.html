@@ -456,6 +456,28 @@
             box-shadow: 0 0 10px rgba(239, 68, 68, 0.3);
         }
 
+        .self-rename-btn {
+            position: absolute;
+            top: 12px;
+            right: 12px;
+            background: rgba(139, 92, 246, 0.12);
+            border: 1px solid rgba(139, 92, 246, 0.35);
+            font-size: 14px;
+            cursor: pointer;
+            opacity: 0.85;
+            transition: all 0.2s ease;
+            padding: 4px 6px;
+            width: auto;
+            height: auto;
+            border-radius: 6px;
+        }
+
+        .self-rename-btn:hover {
+            opacity: 1;
+            background: rgba(139, 92, 246, 0.22);
+            border-color: var(--accent-color);
+            transform: none;
+            box-shadow: 0 0 10px rgba(139, 92, 246, 0.3);
         .kick-vote-count {
             position: absolute;
             top: 12px;
@@ -769,6 +791,13 @@
             word-break: break-word;
         }
 
+        #app-popup-input {
+            display: none;
+            width: 100%;
+            margin: 0 0 16px;
+            box-sizing: border-box;
+        }
+
         #app-popup-actions {
             display: flex;
             justify-content: center;
@@ -996,6 +1025,7 @@
     <div id="app-popup-backdrop" role="dialog" aria-modal="true" aria-labelledby="app-popup-message">
         <div id="app-popup">
             <p id="app-popup-message"></p>
+            <input id="app-popup-input" type="text" autocomplete="nickname" aria-labelledby="app-popup-message">
             <div id="app-popup-actions">
                 <button id="app-popup-cancel-btn" style="display:none;"></button>
                 <button id="app-popup-ok-btn"></button>
@@ -1056,9 +1086,6 @@
                     </button>
                     <button onclick="toggleMyMute()" id="my-mute-btn" style="min-width:132px; margin:0; padding:8px 16px; white-space:nowrap;">
                         🎤 Sustur
-                    </button>
-                    <button id="rename-btn" onclick="renameSelf()" style="width:auto; margin:0; padding:8px 16px;">
-                        ✏️ Yeniden Adlandır
                     </button>
                     <button id="leave-btn" onclick="window.location.reload()" style="background:linear-gradient(135deg, var(--danger-color), #dc2626); width:auto; margin:0; padding:8px 16px;">
                         🚪 Ayrıl
@@ -1192,7 +1219,6 @@
             document.getElementById('btn-share-screen-header').innerText = t('ui.shareScreen');
             document.getElementById('btn-share-screen-header').title = t('ui.shareScreen');
             document.getElementById('my-mute-btn').innerText = t('ui.mute');
-            document.getElementById('rename-btn').innerText = t('ui.rename');
             document.getElementById('leave-btn').innerText = t('ui.leave');
             document.getElementById('screen-stage-label').innerText = t('ui.screenShareStage');
             document.getElementById('fullscreen-btn').innerText = t('ui.fullscreen');
@@ -1212,7 +1238,6 @@
             document.getElementById('sound-toggle-main').setAttribute('aria-label', t('ui.aria.entrySounds'));
             document.getElementById('btn-share-screen-header').setAttribute('aria-label', t('ui.aria.shareScreen'));
             document.getElementById('my-mute-btn').setAttribute('aria-label', t('ui.aria.toggleMute'));
-            document.getElementById('rename-btn').setAttribute('aria-label', t('ui.aria.renameSelf'));
             document.getElementById('leave-btn').setAttribute('aria-label', t('ui.aria.leaveRoom'));
             document.getElementById('fullscreen-btn').setAttribute('aria-label', t('ui.aria.fullscreen'));
             document.getElementById('chat-tab-btn').setAttribute('aria-label', t('ui.aria.tabChat'));
@@ -1237,34 +1262,65 @@
         function showNextPopup() {
             if (popupResolve || popupQueue.length === 0) return;
 
-            const { message, requireDecision, resolve } = popupQueue.shift();
+            const { message, requireDecision, requireInput, defaultValue, resolve } = popupQueue.shift();
             const backdrop = document.getElementById('app-popup-backdrop');
             const msg = document.getElementById('app-popup-message');
             const okBtn = document.getElementById('app-popup-ok-btn');
             const cancelBtn = document.getElementById('app-popup-cancel-btn');
+            const input = document.getElementById('app-popup-input');
 
             msg.textContent = message;
             okBtn.innerText = t('ui.ok');
             cancelBtn.innerText = t('ui.cancel');
             cancelBtn.style.display = requireDecision ? 'inline-block' : 'none';
+            input.style.display = requireInput ? 'block' : 'none';
+            input.placeholder = t('ui.nicknamePlaceholder');
+            input.value = requireInput ? (defaultValue || '') : '';
+            if (requireInput) {
+                input.onkeydown = (event) => {
+                    if (event.key === 'Enter') {
+                        event.preventDefault();
+                        closeAppPopup(true);
+                    }
+                    if (event.key === 'Escape') {
+                        event.preventDefault();
+                        closeAppPopup(false);
+                    }
+                };
+            }
 
             popupResolve = resolve;
             okBtn.onclick = () => closeAppPopup(true);
             cancelBtn.onclick = () => closeAppPopup(false);
             backdrop.style.display = 'flex';
+            if (requireInput) setTimeout(() => input.focus(), 0);
         }
 
         function closeAppPopup(result) {
             const backdrop = document.getElementById('app-popup-backdrop');
+            const input = document.getElementById('app-popup-input');
+            const inputVisible = input.style.display !== 'none';
             backdrop.style.display = 'none';
-            if (popupResolve) popupResolve(result);
+            let popupResult = result;
+            if (inputVisible) {
+                popupResult = result ? input.value : null;
+            }
+            if (popupResolve) popupResolve(popupResult);
+            input.style.display = 'none';
+            input.value = '';
             popupResolve = null;
             showNextPopup();
         }
 
-        function showAppPopup(message, requireDecision = false) {
+        function showAppPopup(message, requireDecision = false, options = {}) {
             return new Promise(resolve => {
-                popupQueue.push({ message, requireDecision, resolve });
+                popupQueue.push({
+                    message,
+                    requireDecision,
+                    requireInput: Boolean(options.requireInput),
+                    defaultValue: options.defaultValue || '',
+                    resolve
+                });
                 showNextPopup();
             });
         }
@@ -1275,6 +1331,10 @@
 
         function showAppConfirm(message) {
             return showAppPopup(message, true);
+        }
+
+        function showAppPrompt(message, defaultValue = '') {
+            return showAppPopup(message, true, { requireInput: true, defaultValue });
         }
 
         // --- Init ---
@@ -1963,6 +2023,7 @@
                 }
 
                 controlsHtml = `
+                    <button class="self-rename-btn" title="${t('ui.rename')}" aria-label="${t('ui.aria.renameSelf')}" onclick="renameSelf()">✏️</button>
                     <div class="user-controls" style="justify-content:center; gap:10px; margin-top:15px;">
                        <span style="font-size:12px; color:var(--muted-text-color); align-self:center;">${statusText}</span>
                     </div>`;
@@ -2061,9 +2122,9 @@
             }
         }
 
-        function renameSelf() {
+        async function renameSelf() {
             if (!socket) return;
-            const nextName = window.prompt(t('ui.renamePrompt'), myNickname);
+            const nextName = await showAppPrompt(t('ui.renamePrompt'), myNickname);
             if (nextName === null) return;
             const trimmed = nextName.trim();
             if (!trimmed) return;
