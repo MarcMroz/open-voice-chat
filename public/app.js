@@ -926,10 +926,33 @@ function sendMessage() {
     if (text && socket) {
         socket.emit('chat-message', text);
         input.value = '';
+        input.style.height = 'auto';
+        input.style.overflowY = 'hidden';
         input.focus();
     }
 }
-function handleEnter(e) { if (e.key === 'Enter') sendMessage(); }
+function handleEnter(e) {
+    if (e.key === 'Enter' && !e.shiftKey) {
+        e.preventDefault();
+        sendMessage();
+    }
+}
+function autoResizeInput() {
+    const input = document.getElementById('message-input');
+    input.style.height = 'auto';
+    const maxHeight = parseInt(getComputedStyle(input).maxHeight, 10);
+    if (input.scrollHeight > maxHeight) {
+        input.style.height = maxHeight + 'px';
+        input.style.overflowY = 'auto';
+    } else {
+        input.style.height = input.scrollHeight + 'px';
+        input.style.overflowY = 'hidden';
+    }
+}
+document.addEventListener('DOMContentLoaded', function() {
+    const msgInput = document.getElementById('message-input');
+    if (msgInput) msgInput.addEventListener('input', autoResizeInput);
+});
 
 function addSystemMsg(text) {
     const box = document.getElementById('chat-messages');

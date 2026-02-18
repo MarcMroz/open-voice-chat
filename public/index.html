@@ -161,7 +161,7 @@
             <div id="chat-tab-content" class="tab-content active" role="tabpanel">
                 <div id="chat-messages"></div>
                 <div id="chat-input-area">
-                    <input type="text" id="message-input" placeholder="Bir mesaj yaz..." onkeypress="handleEnter(event)">
+                    <textarea id="message-input" placeholder="Bir mesaj yaz..." onkeydown="handleEnter(event)" rows="1"></textarea>
                     <button id="send-btn" onclick="sendMessage()" style="width: auto; margin:0;">Gönder</button>
                 </div>
             </div>
