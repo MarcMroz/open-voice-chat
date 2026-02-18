@@ -86,7 +86,8 @@ body {
 }
 
 input,
-select {
+select,
+textarea {
     width: 100%;
     padding: 14px 16px;
     margin: 10px 0;
@@ -101,14 +102,16 @@ select {
 }
 
 input:focus,
-select:focus {
+select:focus,
+textarea:focus {
     outline: none;
     border-color: var(--accent-color);
     box-shadow: 0 0 0 3px rgba(139, 92, 246, 0.2);
     background: rgba(255, 255, 255, 0.08);
 }
 
-input::placeholder {
+input::placeholder,
+textarea::placeholder {
     color: var(--muted-text-color);
     opacity: 1;
 }
@@ -121,6 +124,7 @@ select option {
 button:focus-visible,
 input:focus-visible,
 select:focus-visible,
+textarea:focus-visible,
 .chat-tab:focus-visible,
 .reaction-btn:focus-visible,
 #notification-toast:focus-visible,
@@ -710,11 +714,18 @@ input[type=range] {
     border-top: 1px solid var(--border-color);
     display: flex;
     gap: 12px;
+    align-items: flex-end;
 }
 
 #message-input {
     margin: 0;
     padding: 10px;
+    resize: none;
+    overflow-y: hidden;
+    line-height: 1.4;
+    min-height: 38px;
+    max-height: calc(1.4em * 3 + 20px);
+    font-family: inherit;
 }
 
 /* Vote Modal */
