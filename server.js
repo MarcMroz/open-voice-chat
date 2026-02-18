@@ -198,7 +198,7 @@ io.on('connection', socket => {
       return;
     }
     if (room.password && room.password !== password) {
-      socket.emit('error', 'Geçersiz Şifre');
+      socket.emit('error', 'INVALID_PASSWORD');
       return;
     }
 
