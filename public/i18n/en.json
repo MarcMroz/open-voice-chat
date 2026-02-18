@@ -96,6 +96,20 @@
       "startVoteAgainst": "Start kick vote against {name} (majority yes required)",
       "toggleUserMute": "Toggle mute for {name}",
       "userVolume": "Set volume for {name}"
+    },
+    "avatarPicker": {
+      "title": "Choose Your Avatar",
+      "robots": "Robots",
+      "monsters": "Monsters",
+      "heads": "Heads",
+      "kittens": "Kittens",
+      "humans": "Humans",
+      "bgNone": "No Background",
+      "bg1": "Scene 1",
+      "bg2": "Scene 2",
+      "styleLabel": "Style",
+      "bgLabel": "Background",
+      "changeAvatar": "Change Avatar"
     }
   }
 }

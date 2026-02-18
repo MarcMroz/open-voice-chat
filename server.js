@@ -20,6 +20,7 @@ const DEFAULT_REACTION_AGE = ALLOWED_REACTION_AGES.includes(REQUESTED_DEFAULT_RE
 
 // Global State
 const roomUsers = {};           // { roomId: { peerId: "Nickname" } }
+const roomAvatarStyles = {};    // { roomId: { peerId: { set, bg } } }
 const roomScreenShares = {};    // { roomId: peerId } -- Single Sharer Tracker
 const roomVotes = {};           // { roomId: { targetId, targetName, yes, no, voters: Set(), timer, active: bool } }
 const roomCooldowns = {};       // { roomId: timestamp }
@@ -183,7 +184,7 @@ io.on('connection', socket => {
     return;
   }
 
-  socket.on('join-room', ({ roomId, peerId, nickname, password }) => {
+  socket.on('join-room', ({ roomId, peerId, nickname, password, avatarStyle }) => {
 
     // Double Check Ban (Just in case)
     if (bannedIPs[ip] && Date.now() < bannedIPs[ip]) {
@@ -223,11 +224,22 @@ io.on('connection', socket => {
 
     roomUsers[roomId][peerId] = safeName;
 
+    // Track avatar style
+    if (!roomAvatarStyles[roomId]) roomAvatarStyles[roomId] = {};
+    const VALID_SETS = ['set1', 'set2', 'set3', 'set4', 'set5'];
+    const VALID_BGS = ['none', 'bg1', 'bg2'];
+    const safeAvatarStyle = {
+      set: (avatarStyle && VALID_SETS.includes(avatarStyle.set)) ? avatarStyle.set : 'set1',
+      bg: (avatarStyle && VALID_BGS.includes(avatarStyle.bg)) ? avatarStyle.bg : 'bg1'
+    };
+    roomAvatarStyles[roomId][peerId] = safeAvatarStyle;
+
     // Send existing users to new joiner
     socket.emit('existing-users', roomUsers[roomId]);
+    socket.emit('existing-users-avatars', roomAvatarStyles[roomId]);
 
     // Broadcast to others
-    socket.to(roomId).emit('user-connected', peerId, safeName);
+    socket.to(roomId).emit('user-connected', peerId, safeName, safeAvatarStyle);
 
     // Confirm join (Send back cleaned name)
     socket.emit('joined-room', { roomId, nickname: safeName });
@@ -275,6 +287,15 @@ io.on('connection', socket => {
       nickname = safeNewName;
       roomUsers[roomId][peerId] = safeNewName;
       io.to(roomId).emit('user-renamed', peerId, safeNewName);
+    });
+
+    socket.on('avatar-changed', (style) => {
+      if (!roomAvatarStyles[roomId]) return;
+      const VALID_SETS = ['set1', 'set2', 'set3', 'set4', 'set5'];
+      const VALID_BGS = ['none', 'bg1', 'bg2'];
+      if (!style || !VALID_SETS.includes(style.set) || !VALID_BGS.includes(style.bg)) return;
+      roomAvatarStyles[roomId][peerId] = { set: style.set, bg: style.bg };
+      io.to(roomId).emit('user-avatar-changed', peerId, { set: style.set, bg: style.bg });
     });
 
     // --- Screen Share Lock Logic ---
@@ -351,6 +372,7 @@ io.on('connection', socket => {
 
         // Cleanup User
         if (roomUsers[roomId]) delete roomUsers[roomId][peerId];
+        if (roomAvatarStyles[roomId]) delete roomAvatarStyles[roomId][peerId];
 
         // Check Screen Share
         if (roomScreenShares[roomId] === peerId) {

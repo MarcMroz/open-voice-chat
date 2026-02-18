@@ -981,3 +981,181 @@ input[type=range] {
     border-radius: 12px;
     font-size: 14px;
 }
+
+/* Login Avatar Preview */
+.login-avatar-area {
+    position: relative;
+    display: inline-block;
+    cursor: pointer;
+    margin-bottom: 8px;
+}
+
+.login-avatar-img {
+    width: 80px;
+    height: 80px;
+    border-radius: 50%;
+    border: 3px solid transparent;
+    background: linear-gradient(var(--card-bg), var(--card-bg)) padding-box,
+                linear-gradient(135deg, var(--accent-color), var(--accent-secondary)) border-box;
+    object-fit: cover;
+    transition: all 0.3s ease;
+}
+
+.login-avatar-area:hover .login-avatar-img {
+    transform: scale(1.05);
+    box-shadow: 0 0 20px var(--glow-color);
+}
+
+.login-avatar-edit {
+    position: absolute;
+    bottom: 0;
+    right: -4px;
+    background: linear-gradient(135deg, var(--accent-color), var(--accent-secondary));
+    border-radius: 50%;
+    width: 26px;
+    height: 26px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    font-size: 13px;
+    box-shadow: 0 2px 8px rgba(0, 0, 0, 0.4);
+}
+
+/* Self Avatar Change Button */
+.self-avatar-btn {
+    position: absolute;
+    top: 12px;
+    right: 44px;
+    background: rgba(139, 92, 246, 0.12);
+    border: 1px solid rgba(139, 92, 246, 0.35);
+    font-size: 14px;
+    cursor: pointer;
+    opacity: 0.85;
+    transition: all 0.2s ease;
+    padding: 4px 6px;
+    width: auto;
+    height: auto;
+    border-radius: 6px;
+}
+
+.self-avatar-btn:hover {
+    opacity: 1;
+    background: rgba(139, 92, 246, 0.22);
+    border-color: var(--accent-color);
+    transform: none;
+    box-shadow: 0 0 10px rgba(139, 92, 246, 0.3);
+}
+
+/* Avatar Picker Modal */
+#avatar-picker-backdrop {
+    display: none;
+    position: fixed;
+    inset: 0;
+    background: rgba(10, 10, 15, 0.75);
+    backdrop-filter: blur(6px);
+    z-index: 5000;
+    align-items: center;
+    justify-content: center;
+}
+
+#avatar-picker {
+    background: rgba(18, 18, 26, 0.95);
+    border: 1px solid var(--border-color);
+    border-radius: 16px;
+    box-shadow: 0 20px 50px rgba(0, 0, 0, 0.5), 0 0 30px var(--glow-color);
+    width: min(440px, calc(100vw - 32px));
+    max-height: calc(100vh - 40px);
+    overflow-y: auto;
+    padding: 24px;
+    text-align: center;
+    animation: fadeInUp 0.3s ease-out;
+}
+
+#avatar-picker h3 {
+    margin: 0 0 16px;
+    background: linear-gradient(135deg, var(--accent-color), var(--accent-secondary));
+    -webkit-background-clip: text;
+    -webkit-text-fill-color: transparent;
+    background-clip: text;
+    font-size: 1.3rem;
+}
+
+.avatar-picker-preview-img {
+    width: 120px;
+    height: 120px;
+    border-radius: 50%;
+    border: 3px solid transparent;
+    background: linear-gradient(var(--card-bg), var(--card-bg)) padding-box,
+                linear-gradient(135deg, var(--accent-color), var(--accent-secondary)) border-box;
+    object-fit: cover;
+    margin-bottom: 20px;
+    transition: all 0.3s ease;
+}
+
+.avatar-picker-section {
+    margin-bottom: 16px;
+}
+
+.avatar-picker-label {
+    display: block;
+    font-size: 13px;
+    font-weight: 600;
+    color: var(--muted-text-color);
+    margin-bottom: 8px;
+    text-transform: uppercase;
+    letter-spacing: 0.5px;
+}
+
+.avatar-picker-options {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 8px;
+    justify-content: center;
+}
+
+.avatar-option-btn {
+    padding: 8px 14px;
+    background: rgba(255, 255, 255, 0.05);
+    border: 1px solid rgba(255, 255, 255, 0.1);
+    border-radius: 10px;
+    color: #fff;
+    font-size: 13px;
+    font-weight: 500;
+    cursor: pointer;
+    transition: all 0.2s ease;
+    width: auto;
+    margin: 0;
+}
+
+.avatar-option-btn:hover {
+    background: rgba(139, 92, 246, 0.15);
+    border-color: var(--accent-color);
+    transform: translateY(-1px);
+    box-shadow: none;
+}
+
+.avatar-option-btn.selected {
+    background: linear-gradient(135deg, var(--accent-color), var(--accent-secondary));
+    border-color: transparent;
+    box-shadow: 0 4px 12px rgba(139, 92, 246, 0.4);
+}
+
+#avatar-picker-actions {
+    display: flex;
+    justify-content: center;
+    gap: 10px;
+    margin-top: 20px;
+}
+
+#avatar-picker-actions button {
+    width: auto;
+    min-width: 90px;
+    margin: 0;
+    padding: 10px 20px;
+}
+
+#avatar-picker-cancel {
+    background: rgba(255, 255, 255, 0.08);
+    border: 1px solid rgba(255, 255, 255, 0.16);
+    color: #fff;
+}

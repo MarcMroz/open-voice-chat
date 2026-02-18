@@ -96,6 +96,20 @@
       "startVoteAgainst": "Iniciar votación para expulsar a {name} (requiere mayoría de sí)",
       "toggleUserMute": "Activar o desactivar silencio para {name}",
       "userVolume": "Ajustar volumen para {name}"
+    },
+    "avatarPicker": {
+      "title": "Elige Tu Avatar",
+      "robots": "Robots",
+      "monsters": "Monstruos",
+      "heads": "Cabezas",
+      "kittens": "Gatitos",
+      "humans": "Humanos",
+      "bgNone": "Sin Fondo",
+      "bg1": "Escena 1",
+      "bg2": "Escena 2",
+      "styleLabel": "Estilo",
+      "bgLabel": "Fondo",
+      "changeAvatar": "Cambiar Avatar"
     }
   }
 }

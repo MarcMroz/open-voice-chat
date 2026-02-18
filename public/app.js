@@ -19,6 +19,9 @@ const nicknames = {};
 const activeCalls = {}; // Keep track of active MediaConnections
 let currentScreenSharerId = null; // Track who is sharing screen
 let activeKickVote = null;
+let myAvatarSet = 'set1';
+let myAvatarBg = 'bg1';
+const userAvatarStyles = {}; // { peerId: { set, bg } }
 
 let i18nUnavailableWarned = false;
 const t = (key, params) => {
@@ -29,6 +32,110 @@ const t = (key, params) => {
     }
     return key;
 };
+
+// --- Avatar Helpers ---
+function getAvatarUrl(name, size, peerId) {
+    const cleanName = encodeURIComponent(name);
+    let set = myAvatarSet;
+    let bg = myAvatarBg;
+    if (peerId && peerId !== (myPeer && myPeer.id)) {
+        const style = userAvatarStyles[peerId];
+        if (style) { set = style.set; bg = style.bg; }
+    }
+    const bgParam = bg !== 'none' ? `&bgset=${bg}` : '';
+    return `https://robohash.org/${cleanName}?set=${set}&size=${size}${bgParam}`;
+}
+
+function showAvatarPicker() {
+    return new Promise((resolve) => {
+        const backdrop = document.getElementById('avatar-picker-backdrop');
+        if (!backdrop) { resolve(null); return; }
+
+        const SETS = [
+            { id: 'set1', label: '🤖', key: 'ui.avatarPicker.robots' },
+            { id: 'set2', label: '👾', key: 'ui.avatarPicker.monsters' },
+            { id: 'set3', label: '🗣️', key: 'ui.avatarPicker.heads' },
+            { id: 'set4', label: '🐱', key: 'ui.avatarPicker.kittens' },
+            { id: 'set5', label: '🧑', key: 'ui.avatarPicker.humans' },
+        ];
+        const BGS = [
+            { id: 'none', key: 'ui.avatarPicker.bgNone' },
+            { id: 'bg1', key: 'ui.avatarPicker.bg1' },
+            { id: 'bg2', key: 'ui.avatarPicker.bg2' },
+        ];
+
+        let selectedSet = myAvatarSet;
+        let selectedBg = myAvatarBg;
+
+        const titleEl = document.getElementById('avatar-picker-title');
+        if (titleEl) titleEl.textContent = t('ui.avatarPicker.title');
+
+        function buildPreviewUrl() {
+            const name = (document.getElementById('nickname-input')?.value?.trim()) || myNickname || 'Guest';
+            const cleanName = encodeURIComponent(name);
+            const bgParam = selectedBg !== 'none' ? `&bgset=${selectedBg}` : '';
+            return `https://robohash.org/${cleanName}?set=${selectedSet}&size=150x150${bgParam}`;
+        }
+
+        function render() {
+            const preview = document.getElementById('avatar-picker-preview');
+            if (preview) preview.src = buildPreviewUrl();
+
+            const setsContainer = document.getElementById('avatar-picker-sets');
+            setsContainer.innerHTML = '';
+            SETS.forEach(s => {
+                const btn = document.createElement('button');
+                btn.className = 'avatar-option-btn' + (selectedSet === s.id ? ' selected' : '');
+                btn.textContent = `${s.label} ${t(s.key)}`;
+                btn.onclick = () => { selectedSet = s.id; render(); };
+                setsContainer.appendChild(btn);
+            });
+
+            const bgsContainer = document.getElementById('avatar-picker-bgs');
+            bgsContainer.innerHTML = '';
+            BGS.forEach(b => {
+                const btn = document.createElement('button');
+                btn.className = 'avatar-option-btn' + (selectedBg === b.id ? ' selected' : '');
+                btn.textContent = t(b.key);
+                btn.onclick = () => { selectedBg = b.id; render(); };
+                bgsContainer.appendChild(btn);
+            });
+        }
+
+        render();
+        backdrop.style.display = 'flex';
+
+        const confirmBtn = document.getElementById('avatar-picker-confirm');
+        const cancelBtn = document.getElementById('avatar-picker-cancel');
+
+        function cleanup() {
+            backdrop.style.display = 'none';
+            confirmBtn.replaceWith(confirmBtn.cloneNode(true));
+            cancelBtn.replaceWith(cancelBtn.cloneNode(true));
+        }
+
+        confirmBtn.onclick = () => {
+            myAvatarSet = selectedSet;
+            myAvatarBg = selectedBg;
+            cleanup();
+            updateLoginAvatarPreview();
+            resolve({ set: selectedSet, bg: selectedBg });
+        };
+        cancelBtn.onclick = () => {
+            cleanup();
+            resolve(null);
+        };
+    });
+}
+
+function updateLoginAvatarPreview() {
+    const preview = document.getElementById('login-avatar-preview');
+    if (!preview) return;
+    const name = (document.getElementById('nickname-input')?.value?.trim()) || 'Guest';
+    const cleanName = encodeURIComponent(name);
+    const bgParam = myAvatarBg !== 'none' ? `&bgset=${myAvatarBg}` : '';
+    preview.src = `https://robohash.org/${cleanName}?set=${myAvatarSet}&size=80x80${bgParam}`;
+}
 
 function updateRoomDisplay() {
     const roomDisplay = document.getElementById('room-display');
@@ -111,6 +218,17 @@ function applyTranslations() {
         select.innerHTML = `<option value="" disabled selected>${t('ui.roomLoading')}</option>`;
     }
     updateRoomDisplay();
+    // Avatar picker labels
+    const pickerTitle = document.getElementById('avatar-picker-title');
+    if (pickerTitle) pickerTitle.textContent = t('ui.avatarPicker.title');
+    const styleLabel = document.getElementById('avatar-picker-style-label');
+    if (styleLabel) styleLabel.textContent = t('ui.avatarPicker.styleLabel');
+    const bgLabel = document.getElementById('avatar-picker-bg-label');
+    if (bgLabel) bgLabel.textContent = t('ui.avatarPicker.bgLabel');
+    const pickerConfirm = document.getElementById('avatar-picker-confirm');
+    if (pickerConfirm) pickerConfirm.textContent = t('ui.ok');
+    const pickerCancel = document.getElementById('avatar-picker-cancel');
+    if (pickerCancel) pickerCancel.textContent = t('ui.cancel');
 }
 
 let popupResolve;
@@ -245,6 +363,7 @@ window.onload = async function () {
     if (nicknameInput) {
         nicknameInput.addEventListener('input', () => {
             nicknameInput.dataset.userEdited = 'true';
+            updateLoginAvatarPreview();
         });
     }
     languageSelect.addEventListener('change', async (event) => {
@@ -411,8 +530,7 @@ function updateParticipantsList() {
 
     // Add self first
     if (myPeer && myPeer.id) {
-        const cleanName = encodeURIComponent(myNickname);
-        const avatarUrl = `https://robohash.org/${cleanName}?set=set1&size=40x40&bgset=bg1`;
+        const avatarUrl = getAvatarUrl(myNickname, '40x40');
         const isSharing = localScreenStream !== null;
 
         const item = document.createElement('div');
@@ -432,8 +550,7 @@ function updateParticipantsList() {
     Object.entries(nicknames).forEach(([peerId, name]) => {
         if (myPeer && peerId === myPeer.id) return; // Skip self
 
-        const cleanName = encodeURIComponent(name);
-        const avatarUrl = `https://robohash.org/${cleanName}?set=set1&size=40x40&bgset=bg1`;
+        const avatarUrl = getAvatarUrl(name, '40x40', peerId);
         const isSharing = currentScreenSharerId === peerId;
 
         const item = document.createElement('div');
@@ -568,7 +685,7 @@ function initSocket(roomId, id, password) {
         reconnectionAttempts: 5,
         timeout: 10000
     });
-    socket.emit('join-room', { roomId, peerId: id, nickname: myNickname, password });
+    socket.emit('join-room', { roomId, peerId: id, nickname: myNickname, password, avatarStyle: { set: myAvatarSet, bg: myAvatarBg } });
 
     socket.on('joined-room', (data) => {
         // Handle new object payload or legacy string
@@ -601,13 +718,23 @@ function initSocket(roomId, id, password) {
         updateParticipantsList();
     });
 
+    socket.on('existing-users-avatars', (avatarList) => {
+        Object.assign(userAvatarStyles, avatarList);
+        for (const [pid] of Object.entries(avatarList)) {
+            const name = nicknames[pid];
+            if (name) updateUserCardName(pid, name);
+        }
+        updateParticipantsList();
+    });
+
     socket.on('error', msg => {
         const translatedError = msg === 'INVALID_PASSWORD' ? t('ui.invalidPassword') : msg;
         showAppAlert(t('ui.errorPrefix', { error: translatedError })).then(() => window.location.reload());
     });
 
-    socket.on('user-connected', (uid, name) => {
+    socket.on('user-connected', (uid, name, avatarStyle) => {
         nicknames[uid] = name;
+        if (avatarStyle) userAvatarStyles[uid] = avatarStyle;
         addSystemMsg(t('ui.userJoined', { name }));
         playSound('join');
         updateParticipantsList();
@@ -655,6 +782,13 @@ function initSocket(roomId, id, password) {
         nicknames[uid] = name;
         updateUserCardName(uid, name);
         if (myPeer && uid === myPeer.id) myNickname = name;
+        updateParticipantsList();
+    });
+
+    socket.on('user-avatar-changed', (uid, style) => {
+        userAvatarStyles[uid] = style;
+        const name = nicknames[uid] || (myPeer && uid === myPeer.id ? myNickname : 'Guest');
+        updateUserCardName(uid, name);
         updateParticipantsList();
     });
 
@@ -851,8 +985,7 @@ function addUser(stream, uid, name, isMe = false) {
         document.body.appendChild(audio);
     }
 
-    const cleanName = encodeURIComponent(name);
-    const avatarUrl = `https://robohash.org/${cleanName}?set=set1&size=64x64&bgset=bg1`;
+    const avatarUrl = getAvatarUrl(name, '64x64', uid);
 
     const grid = document.getElementById('user-grid');
     card = document.createElement('div');
@@ -881,6 +1014,7 @@ function addUser(stream, uid, name, isMe = false) {
 
         controlsHtml = `
             <button class="self-rename-btn" title="${t('ui.rename')}" aria-label="${t('ui.aria.renameSelf')}" onclick="renameSelf()">✏️</button>
+            <button class="self-avatar-btn" title="${t('ui.avatarPicker.changeAvatar')}" aria-label="${t('ui.avatarPicker.changeAvatar')}" onclick="changeAvatar()">🎨</button>
             <div class="user-controls" style="justify-content:center; gap:10px; margin-top:15px;">
                <span style="font-size:12px; color:var(--muted-text-color); align-self:center;">${statusText}</span>
             </div>`;
@@ -909,8 +1043,7 @@ function updateUserCardName(uid, name) {
 
     const avatarEl = document.getElementById(`avatar-${uid}`);
     if (avatarEl) {
-        const cleanName = encodeURIComponent(name);
-        avatarEl.src = `https://robohash.org/${cleanName}?set=set1&size=64x64&bgset=bg1`;
+        avatarEl.src = getAvatarUrl(name, '64x64', uid);
     }
 }
 
@@ -986,6 +1119,23 @@ async function renameSelf() {
     const trimmed = nextName.trim();
     if (!trimmed) return;
     socket.emit('rename-user', trimmed);
+}
+
+async function changeAvatar() {
+    const result = await showAvatarPicker();
+    if (!result) return;
+    // Update all own avatars immediately
+    updateAllMyAvatars();
+    // Broadcast to other users
+    if (socket) socket.emit('avatar-changed', { set: result.set, bg: result.bg });
+}
+
+function updateAllMyAvatars() {
+    if (!myPeer) return;
+    const uid = myPeer.id;
+    const avatarEl = document.getElementById(`avatar-${uid}`);
+    if (avatarEl) avatarEl.src = getAvatarUrl(myNickname, '64x64');
+    updateParticipantsList();
 }
 
 
