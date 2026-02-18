@@ -53,10 +53,11 @@
     "youBadge": "SEN",
     "selfStatus": "( Ben )",
     "selfStatusListener": "( Ben - 🔇 Dinleyici )",
-    "kickVoteTitle": "Oylama Başlat",
+    "kickVoteTitle": "Atma oylaması başlat (evet çoğunluğu gerekir)",
     "shareDenied": "Şu anda başkası ekran paylaşıyor. Lütfen bekleyin.",
     "shareLockedTitle": "Başka biri ekran paylaşıyor",
-    "kickConfirm": "{name} için oylama başlatılsın mı? (Bu isim spam yapıyorsa deneyin)",
+    "kickConfirm": "{name} için atma oylaması başlatılsın mı? Sadece EVET oyları HAYIR oylarından fazlaysa atılır.",
+    "kickVotesBadgeTitle": "Atma oyu: {count}",
     "kickedByVote": "Oy birliği ile odadan atıldınız.",
     "selectRoom": "Lütfen bir oda seçin!",
     "micErrorConfirm": "Mikrofon bulunamadı veya izin verilmedi ({error}).\n\nSadece DİNLEYİCİ olarak katılmak ister misiniz?",
@@ -91,7 +92,7 @@
       "tabReactions": "Tepkiler sekmesini aç",
       "messageInput": "Sohbet mesajı girişi",
       "sendMessage": "Mesaj gönder",
-      "startVoteAgainst": "{name} için oylama başlat",
+      "startVoteAgainst": "{name} için atma oylaması başlat (evet çoğunluğu gerekir)",
       "toggleUserMute": "{name} için sesi aç veya kapat",
       "userVolume": "{name} için ses düzeyini ayarla"
     }

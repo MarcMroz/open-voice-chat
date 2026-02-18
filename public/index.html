@@ -456,6 +456,23 @@
             box-shadow: 0 0 10px rgba(239, 68, 68, 0.3);
         }
 
+        .kick-vote-count {
+            position: absolute;
+            top: 12px;
+            left: 12px;
+            min-width: 24px;
+            height: 24px;
+            display: none;
+            align-items: center;
+            justify-content: center;
+            border-radius: 999px;
+            background: rgba(239, 68, 68, 0.85);
+            border: 1px solid rgba(255, 255, 255, 0.2);
+            color: #fff;
+            font-size: 12px;
+            font-weight: 700;
+        }
+
         /* Right Side: Chat */
         #chat-panel {
             flex: 1;
@@ -1117,6 +1134,7 @@
         const nicknames = {};
         const activeCalls = {}; // Keep track of active MediaConnections
         let currentScreenSharerId = null; // Track who is sharing screen
+        let activeKickVote = null;
 
         let i18nUnavailableWarned = false;
         const t = (key, params) => {
@@ -1721,13 +1739,22 @@
             });
 
             // Vote Events
-            socket.on('vote-started', ({ targetName, targetId }) => {
+            socket.on('vote-started', ({ targetName, targetId, yes }) => {
+                activeKickVote = { targetId, yes };
+                updateKickVoteBadge();
                 showVoteModal(targetName, targetId);
+            });
+
+            socket.on('vote-updated', ({ targetId, yes }) => {
+                activeKickVote = { targetId, yes };
+                updateKickVoteBadge();
             });
 
             socket.on('vote-ended', () => {
                 // Close modal
                 document.getElementById('vote-modal').style.display = 'none';
+                activeKickVote = null;
+                updateKickVoteBadge();
             });
 
             socket.on('kick-user', (targetId) => {
@@ -1812,6 +1839,19 @@
             status.style.display = 'block';
             status.innerText = t('ui.voteWaiting');
             status.style.color = '#ccc';
+        }
+
+        function updateKickVoteBadge() {
+            document.querySelectorAll('.kick-vote-count').forEach(el => {
+                el.style.display = 'none';
+            });
+
+            if (!activeKickVote) return;
+            const badge = document.getElementById(`kick-vote-count-${activeKickVote.targetId}`);
+            if (!badge) return;
+            badge.style.display = 'flex';
+            badge.innerText = String(activeKickVote.yes || 0);
+            badge.title = t('ui.kickVotesBadgeTitle', { count: activeKickVote.yes || 0 });
         }
 
         // --- Chat Functions ---
@@ -1928,10 +1968,12 @@
             card.innerHTML = `
                 <video id="video-${uid}" class="user-video" autoplay playsinline ${isMe ? 'muted' : ''}></video>
                 <img src="${avatarUrl}" class="avatar-img" alt="Avatar" id="avatar-${uid}">
+                <div class="kick-vote-count" id="kick-vote-count-${uid}"></div>
                 <div class="user-name" id="name-${uid}">${name}</div>
                 ${controlsHtml}
             `;
             grid.appendChild(card);
+            updateKickVoteBadge();
 
             // Apply Stream to Video if exists
             if (hasVideo) {

@@ -154,7 +154,7 @@ For **Azure Web App (Code)** deployments, do not hardcode a port in Azure. The p
 5. **Send Reactions:** Switch to the "Reactions" tab and click any reaction sound
 6. **Text Chat:** Use the "Sohbet" tab to send text messages
 7. **View Participants:** Switch to "Katılımcılar" tab to see who's online
-8. **Vote Kick:** Click the ⚠️ button on any user card to start a vote
+8. **Vote Kick:** Click ⚠️ to start a kick vote; user is removed only if YES votes are greater than NO votes
 
 ---
 

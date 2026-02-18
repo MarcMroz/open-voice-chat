@@ -53,10 +53,11 @@
     "youBadge": "YOU",
     "selfStatus": "( Me )",
     "selfStatusListener": "( Me - 🔇 Listener )",
-    "kickVoteTitle": "Start Vote",
+    "kickVoteTitle": "Start kick vote (majority yes wins)",
     "shareDenied": "Someone else is sharing their screen right now. Please wait.",
     "shareLockedTitle": "Someone else is sharing the screen",
-    "kickConfirm": "Start a vote against {name}? (Use this if this name is spamming)",
+    "kickConfirm": "Start a kick vote against {name}? They are removed only if YES votes are greater than NO votes.",
+    "kickVotesBadgeTitle": "Kick votes: {count}",
     "kickedByVote": "You were kicked from the room by vote.",
     "selectRoom": "Please select a room!",
     "micErrorConfirm": "Microphone not found or permission denied ({error}).\n\nWould you like to join as LISTENER only?",
@@ -91,7 +92,7 @@
       "tabReactions": "Open reactions tab",
       "messageInput": "Chat message input",
       "sendMessage": "Send message",
-      "startVoteAgainst": "Start vote against {name}",
+      "startVoteAgainst": "Start kick vote against {name} (majority yes required)",
       "toggleUserMute": "Toggle mute for {name}",
       "userVolume": "Set volume for {name}"
     }

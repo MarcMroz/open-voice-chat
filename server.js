@@ -321,7 +321,7 @@ io.on('connection', socket => {
         active: true
       };
 
-      io.to(roomId).emit('vote-started', { targetName, targetId });
+      io.to(roomId).emit('vote-started', { targetName, targetId, yes: 0, no: 1 });
 
       // Vote Timer (30s)
       setTimeout(() => {
@@ -341,6 +341,7 @@ io.on('connection', socket => {
       currentVote.voters.add(peerId);
       if (vote) currentVote.yes++;
       else currentVote.no++;
+      io.to(roomId).emit('vote-updated', { targetId: currentVote.targetId, yes: currentVote.yes, no: currentVote.no });
     });
 
     socket.on('disconnect', () => {
