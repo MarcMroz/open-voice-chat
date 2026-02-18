@@ -77,32 +77,42 @@ function showAvatarPicker() {
             return `https://robohash.org/${cleanName}?set=${selectedSet}&size=150x150${bgParam}`;
         }
 
-        function render() {
-            const preview = document.getElementById('avatar-picker-preview');
-            if (preview) preview.src = buildPreviewUrl();
+        let setButtons = [];
+        let bgButtons = [];
 
+        function buildButtons() {
             const setsContainer = document.getElementById('avatar-picker-sets');
             setsContainer.innerHTML = '';
-            SETS.forEach(s => {
+            setButtons = SETS.map(s => {
                 const btn = document.createElement('button');
-                btn.className = 'avatar-option-btn' + (selectedSet === s.id ? ' selected' : '');
+                btn.className = 'avatar-option-btn';
                 btn.textContent = `${s.label} ${t(s.key)}`;
-                btn.onclick = () => { selectedSet = s.id; render(); };
+                btn.onclick = () => { selectedSet = s.id; updateSelection(); };
                 setsContainer.appendChild(btn);
+                return { btn, id: s.id };
             });
 
             const bgsContainer = document.getElementById('avatar-picker-bgs');
             bgsContainer.innerHTML = '';
-            BGS.forEach(b => {
+            bgButtons = BGS.map(b => {
                 const btn = document.createElement('button');
-                btn.className = 'avatar-option-btn' + (selectedBg === b.id ? ' selected' : '');
+                btn.className = 'avatar-option-btn';
                 btn.textContent = t(b.key);
-                btn.onclick = () => { selectedBg = b.id; render(); };
+                btn.onclick = () => { selectedBg = b.id; updateSelection(); };
                 bgsContainer.appendChild(btn);
+                return { btn, id: b.id };
             });
         }
 
-        render();
+        function updateSelection() {
+            const preview = document.getElementById('avatar-picker-preview');
+            if (preview) preview.src = buildPreviewUrl();
+            setButtons.forEach(({ btn, id }) => btn.classList.toggle('selected', id === selectedSet));
+            bgButtons.forEach(({ btn, id }) => btn.classList.toggle('selected', id === selectedBg));
+        }
+
+        buildButtons();
+        updateSelection();
         backdrop.style.display = 'flex';
 
         const confirmBtn = document.getElementById('avatar-picker-confirm');
@@ -110,8 +120,8 @@ function showAvatarPicker() {
 
         function cleanup() {
             backdrop.style.display = 'none';
-            confirmBtn.replaceWith(confirmBtn.cloneNode(true));
-            cancelBtn.replaceWith(cancelBtn.cloneNode(true));
+            confirmBtn.onclick = null;
+            cancelBtn.onclick = null;
         }
 
         confirmBtn.onclick = () => {

@@ -26,6 +26,8 @@ const roomVotes = {};           // { roomId: { targetId, targetName, yes, no, vo
 const roomCooldowns = {};       // { roomId: timestamp }
 const bannedIPs = {};           // { ip: expireTimestamp }
 const socketMap = {};           // { socketId: { roomId, peerId } } -- Critical for Ghost User Fix
+const VALID_AVATAR_SETS = ['set1', 'set2', 'set3', 'set4', 'set5'];
+const VALID_AVATAR_BGS = ['none', 'bg1', 'bg2'];
 
 // Helper: Robust IP Detection
 function getClientIP(socket) {
@@ -226,11 +228,9 @@ io.on('connection', socket => {
 
     // Track avatar style
     if (!roomAvatarStyles[roomId]) roomAvatarStyles[roomId] = {};
-    const VALID_SETS = ['set1', 'set2', 'set3', 'set4', 'set5'];
-    const VALID_BGS = ['none', 'bg1', 'bg2'];
     const safeAvatarStyle = {
-      set: (avatarStyle && VALID_SETS.includes(avatarStyle.set)) ? avatarStyle.set : 'set1',
-      bg: (avatarStyle && VALID_BGS.includes(avatarStyle.bg)) ? avatarStyle.bg : 'bg1'
+      set: (avatarStyle && VALID_AVATAR_SETS.includes(avatarStyle.set)) ? avatarStyle.set : 'set1',
+      bg: (avatarStyle && VALID_AVATAR_BGS.includes(avatarStyle.bg)) ? avatarStyle.bg : 'bg1'
     };
     roomAvatarStyles[roomId][peerId] = safeAvatarStyle;
 
@@ -291,9 +291,7 @@ io.on('connection', socket => {
 
     socket.on('avatar-changed', (style) => {
       if (!roomAvatarStyles[roomId]) return;
-      const VALID_SETS = ['set1', 'set2', 'set3', 'set4', 'set5'];
-      const VALID_BGS = ['none', 'bg1', 'bg2'];
-      if (!style || !VALID_SETS.includes(style.set) || !VALID_BGS.includes(style.bg)) return;
+      if (!style || !VALID_AVATAR_SETS.includes(style.set) || !VALID_AVATAR_BGS.includes(style.bg)) return;
       roomAvatarStyles[roomId][peerId] = { set: style.set, bg: style.bg };
       io.to(roomId).emit('user-avatar-changed', peerId, { set: style.set, bg: style.bg });
     });
