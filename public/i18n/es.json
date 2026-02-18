@@ -53,10 +53,11 @@
     "youBadge": "TÚ",
     "selfStatus": "( Yo )",
     "selfStatusListener": "( Yo - 🔇 Oyente )",
-    "kickVoteTitle": "Iniciar votación",
+    "kickVoteTitle": "Iniciar votación para expulsar (gana mayoría de sí)",
     "shareDenied": "Otra persona está compartiendo pantalla. Por favor espera.",
     "shareLockedTitle": "Otra persona está compartiendo pantalla",
-    "kickConfirm": "¿Iniciar una votación contra {name}? (Úsalo si este nombre está haciendo spam)",
+    "kickConfirm": "¿Iniciar una votación para expulsar a {name}? Solo se expulsa si los votos SÍ son mayores que los NO.",
+    "kickVotesBadgeTitle": "Votos para expulsar: {count}",
     "kickedByVote": "Fuiste expulsado de la sala por votación.",
     "selectRoom": "¡Por favor selecciona una sala!",
     "micErrorConfirm": "Micrófono no encontrado o permiso denegado ({error}).\n\n¿Quieres unirte solo como OYENTE?",
@@ -91,7 +92,7 @@
       "tabReactions": "Abrir pestaña de reacciones",
       "messageInput": "Entrada de mensaje de chat",
       "sendMessage": "Enviar mensaje",
-      "startVoteAgainst": "Iniciar votación contra {name}",
+      "startVoteAgainst": "Iniciar votación para expulsar a {name} (requiere mayoría de sí)",
       "toggleUserMute": "Activar o desactivar silencio para {name}",
       "userVolume": "Ajustar volumen para {name}"
     }
