@@ -239,6 +239,7 @@ function applyTranslations() {
     if (pickerConfirm) pickerConfirm.textContent = t('ui.ok');
     const pickerCancel = document.getElementById('avatar-picker-cancel');
     if (pickerCancel) pickerCancel.textContent = t('ui.cancel');
+    updateLoginAvatarPreview();
 }
 
 let popupResolve;
