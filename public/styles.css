@@ -938,15 +938,19 @@ input[type=range] {
 
     #chat-panel {
         max-width: none;
-        height: 40%;
-        min-height: 200px;
+        flex: 1;
+        min-height: 0;
         border-left: none;
         border-top: 1px solid var(--border-color);
     }
 
     #main-content {
-        height: 60%;
+        flex: 0 0 auto;
+        height: auto;
+        max-height: 40vh;
         border-right: none;
+        min-height: 0;
+        overflow: hidden;
     }
 
     .login-box {
@@ -955,26 +959,193 @@ input[type=range] {
         padding: 2rem;
     }
 
-    .user-card {
-        padding: 16px;
+    /* Compact text-list user cards on mobile */
+    #user-grid {
+        display: flex;
+        flex-direction: column;
+        gap: 6px;
+        padding: 8px;
+        overflow-y: auto;
+        -webkit-overflow-scrolling: touch;
     }
 
-    #user-grid {
-        gap: 12px;
-        padding: 16px;
+    .user-card {
+        flex-direction: row;
+        align-items: center;
+        padding: 8px 12px;
+        border-radius: 10px;
+        gap: 10px;
+    }
+
+    .user-card .avatar-img {
+        width: 32px;
+        height: 32px;
+        margin-bottom: 0;
+        flex-shrink: 0;
+    }
+
+    .user-card .user-video {
+        display: none;
+    }
+
+    .user-card .user-name {
+        font-size: 13px;
+        margin-bottom: 0;
+        white-space: nowrap;
+        overflow: hidden;
+        text-overflow: ellipsis;
+    }
+
+    .user-card .user-controls {
+        margin-top: 0;
+        flex-shrink: 0;
+        width: auto;
+        gap: 6px;
+    }
+
+    .user-card .user-controls input[type=range] {
+        width: 60px;
+        flex-grow: 0;
+    }
+
+    .user-card .mute-btn-small {
+        width: 28px;
+        height: 28px;
+        padding: 4px;
+        font-size: 12px;
+    }
+
+    .user-card .kick-btn {
+        position: static;
+        padding: 4px 6px;
+        font-size: 12px;
+        opacity: 1;
+        flex-shrink: 0;
+        order: 10;
+    }
+
+    .user-card .self-rename-btn,
+    .user-card .self-avatar-btn {
+        position: static;
+        padding: 4px 6px;
+        font-size: 12px;
+        opacity: 1;
+        flex-shrink: 0;
+    }
+
+    .user-card .kick-vote-count {
+        position: static;
     }
 
     header {
-        padding: 10px 15px;
+        padding: 6px 10px;
+        gap: 6px;
+        flex-wrap: nowrap;
     }
 
     header h3 {
-        font-size: 1rem;
+        font-size: 0.85rem;
+    }
+
+    /* Hide sound toggle label text on mobile, keep just the icon */
+    #sound-toggle-main-label {
+        padding: 4px 6px !important;
+        font-size: 14px;
+    }
+
+    #header-controls {
+        gap: 4px;
+        flex-shrink: 0;
     }
 
     #header-controls button {
-        padding: 6px 12px;
+        padding: 6px 8px;
+        font-size: 11px;
+    }
+
+    #header-controls #my-mute-btn {
+        min-width: 70px !important;
+        padding: 6px 8px !important;
+        font-size: 11px;
+    }
+
+    /* Chat panel scrolling fixes */
+    #chat-tab-content {
+        min-height: 0;
+        overflow: hidden;
+    }
+
+    #chat-messages {
+        flex: 1;
+        min-height: 0;
+        overflow-y: auto;
+        -webkit-overflow-scrolling: touch;
+    }
+
+    #chat-input-area {
+        padding: 10px;
+        gap: 8px;
+        flex-shrink: 0;
+    }
+
+    #message-input {
+        padding: 8px;
+        font-size: 14px;
+    }
+
+    /* Tab content scrolling */
+    .tab-content {
+        min-height: 0;
+        overflow-y: auto;
+        -webkit-overflow-scrolling: touch;
+    }
+
+    #participants-list {
+        padding: 10px;
+        gap: 6px;
+        overflow-y: auto;
+        -webkit-overflow-scrolling: touch;
+    }
+
+    #reactions-list {
+        padding: 10px;
+        gap: 8px;
+        grid-template-columns: repeat(auto-fill, minmax(110px, 1fr));
+        overflow-y: auto;
+        -webkit-overflow-scrolling: touch;
+    }
+
+    .reaction-btn {
+        padding: 10px 12px;
         font-size: 12px;
+    }
+
+    /* Chat tabs compact */
+    .chat-tab {
+        padding: 10px 8px;
+        font-size: 12px;
+        gap: 4px;
+    }
+
+    /* Screen stage on mobile */
+    #screen-stage {
+        height: 50%;
+    }
+
+    .stage-active #main-content {
+        max-height: 50vh;
+    }
+
+    /* Vote modal on mobile */
+    #vote-modal {
+        width: calc(100vw - 32px);
+        max-width: 320px;
+    }
+
+    /* Thinner footer on mobile */
+    .developer-footer {
+        padding: 6px;
+        font-size: 10px;
     }
 }
 
