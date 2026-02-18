@@ -243,7 +243,8 @@ io.on('connection', socket => {
       io.to(roomId).emit('chat-message', {
         user: nickname,
         text: cleanMsg,
-        time: new Date().toLocaleTimeString('tr-TR', { hour: '2-digit', minute: '2-digit' })
+        time: new Date().toLocaleTimeString('tr-TR', { hour: '2-digit', minute: '2-digit' }),
+        timestamp: Date.now()
       });
     });
 
@@ -383,7 +384,8 @@ function endVote(roomId) {
     io.to(roomId).emit('chat-message', {
       user: "Sistem",
       text: `⚠️ **${v.targetName}** oy çoğunluğu ile uzaklaştırıldı.`,
-      time: new Date().toLocaleTimeString('tr-TR', { hour: '2-digit', minute: '2-digit' })
+      time: new Date().toLocaleTimeString('tr-TR', { hour: '2-digit', minute: '2-digit' }),
+      timestamp: Date.now()
     });
 
     io.to(roomId).emit('kick-user', v.targetId);
@@ -432,7 +434,8 @@ function endVote(roomId) {
     io.to(roomId).emit('chat-message', {
       user: "Sistem",
       text: `ℹ️ Oylama başarısız. ${v.targetName} kalıyor. (Evet: ${v.yes}, Hayır: ${v.no})`,
-      time: new Date().toLocaleTimeString('tr-TR', { hour: '2-digit', minute: '2-digit' })
+      time: new Date().toLocaleTimeString('tr-TR', { hour: '2-digit', minute: '2-digit' }),
+      timestamp: Date.now()
     });
   }
 

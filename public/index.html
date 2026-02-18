@@ -1694,7 +1694,10 @@
             socket.on('chat-message', (data) => {
                 const div = document.createElement('div');
                 div.className = 'message';
-                div.innerHTML = `<span class="msg-time">${data.time}</span><span class="msg-user">${data.user}:</span> ${data.text}`;
+                const displayTime = Number.isFinite(data.timestamp)
+                    ? new Date(data.timestamp).toLocaleTimeString(undefined, { hour: '2-digit', minute: '2-digit' })
+                    : data.time;
+                div.innerHTML = `<span class="msg-time">${displayTime}</span><span class="msg-user">${data.user}:</span> ${data.text}`;
                 const box = document.getElementById('chat-messages');
                 if (box) {
                     box.appendChild(div);
