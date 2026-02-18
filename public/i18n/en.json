@@ -63,6 +63,7 @@
     "connectionError": "Connection Error: {error}",
     "connectionStartFailed": "Failed to start connection: {error}",
     "errorPrefix": "Error: {error}",
+    "invalidPassword": "Invalid password",
     "joinedRoom": "You joined room {room}",
     "userJoined": "{name} joined the room",
     "userLeft": "{name} left the room",

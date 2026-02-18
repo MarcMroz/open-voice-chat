@@ -63,6 +63,7 @@
     "connectionError": "Error de conexión: {error}",
     "connectionStartFailed": "No se pudo iniciar la conexión: {error}",
     "errorPrefix": "Error: {error}",
+    "invalidPassword": "Contraseña inválida",
     "joinedRoom": "Te uniste a la sala {room}",
     "userJoined": "{name} se unió a la sala",
     "userLeft": "{name} salió de la sala",

@@ -1666,7 +1666,10 @@
                 updateParticipantsList();
             });
 
-            socket.on('error', msg => { showAppAlert(t('ui.errorPrefix', { error: msg })).then(() => window.location.reload()); });
+            socket.on('error', msg => {
+                const translatedError = msg === 'INVALID_PASSWORD' ? t('ui.invalidPassword') : msg;
+                showAppAlert(t('ui.errorPrefix', { error: translatedError })).then(() => window.location.reload());
+            });
 
             socket.on('user-connected', (uid, name) => {
                 nicknames[uid] = name;

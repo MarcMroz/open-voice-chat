@@ -63,6 +63,7 @@
     "connectionError": "Bağlantı Hatası: {error}",
     "connectionStartFailed": "Bağlantı başlatılamadı: {error}",
     "errorPrefix": "Hata: {error}",
+    "invalidPassword": "Geçersiz şifre",
     "joinedRoom": "{room} odasına katıldınız",
     "userJoined": "{name} odaya katıldı",
     "userLeft": "{name} odadan ayrıldı",
