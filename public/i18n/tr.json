@@ -96,6 +96,20 @@
       "startVoteAgainst": "{name} için atma oylaması başlat (evet çoğunluğu gerekir)",
       "toggleUserMute": "{name} için sesi aç veya kapat",
       "userVolume": "{name} için ses düzeyini ayarla"
+    },
+    "avatarPicker": {
+      "title": "Avatarını Seç",
+      "robots": "Robotlar",
+      "monsters": "Canavarlar",
+      "heads": "Kafalar",
+      "kittens": "Kediler",
+      "humans": "İnsanlar",
+      "bgNone": "Arka Plan Yok",
+      "bg1": "Sahne 1",
+      "bg2": "Sahne 2",
+      "styleLabel": "Stil",
+      "bgLabel": "Arka Plan",
+      "changeAvatar": "Avatarı Değiştir"
     }
   }
 }
