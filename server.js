@@ -198,7 +198,7 @@ io.on('connection', socket => {
       return;
     }
     if (room.password && room.password !== password) {
-      socket.emit('error', 'Geçersiz Şifre');
+      socket.emit('error', 'INVALID_PASSWORD');
       return;
     }
 
@@ -243,7 +243,8 @@ io.on('connection', socket => {
       io.to(roomId).emit('chat-message', {
         user: nickname,
         text: cleanMsg,
-        time: new Date().toLocaleTimeString('tr-TR', { hour: '2-digit', minute: '2-digit' })
+        time: new Date().toLocaleTimeString('tr-TR', { hour: '2-digit', minute: '2-digit' }),
+        timestamp: Date.now()
       });
     });
 
@@ -320,7 +321,7 @@ io.on('connection', socket => {
         active: true
       };
 
-      io.to(roomId).emit('vote-started', { targetName, targetId });
+      io.to(roomId).emit('vote-started', { targetName, targetId, yes: 0, no: 1 });
 
       // Vote Timer (30s)
       setTimeout(() => {
@@ -340,6 +341,7 @@ io.on('connection', socket => {
       currentVote.voters.add(peerId);
       if (vote) currentVote.yes++;
       else currentVote.no++;
+      io.to(roomId).emit('vote-updated', { targetId: currentVote.targetId, yes: currentVote.yes, no: currentVote.no });
     });
 
     socket.on('disconnect', () => {
@@ -383,7 +385,8 @@ function endVote(roomId) {
     io.to(roomId).emit('chat-message', {
       user: "Sistem",
       text: `⚠️ **${v.targetName}** oy çoğunluğu ile uzaklaştırıldı.`,
-      time: new Date().toLocaleTimeString('tr-TR', { hour: '2-digit', minute: '2-digit' })
+      time: new Date().toLocaleTimeString('tr-TR', { hour: '2-digit', minute: '2-digit' }),
+      timestamp: Date.now()
     });
 
     io.to(roomId).emit('kick-user', v.targetId);
@@ -432,7 +435,8 @@ function endVote(roomId) {
     io.to(roomId).emit('chat-message', {
       user: "Sistem",
       text: `ℹ️ Oylama başarısız. ${v.targetName} kalıyor. (Evet: ${v.yes}, Hayır: ${v.no})`,
-      time: new Date().toLocaleTimeString('tr-TR', { hour: '2-digit', minute: '2-digit' })
+      time: new Date().toLocaleTimeString('tr-TR', { hour: '2-digit', minute: '2-digit' }),
+      timestamp: Date.now()
     });
   }
 
