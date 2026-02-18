@@ -1003,6 +1003,11 @@
             </div>
             <div class="settings-area" style="justify-content: center;">
                 <label class="checkbox-wrapper">
+                    <input type="checkbox" id="noise-suppression-toggle" checked> <span id="noise-suppression-label">🔇 Noise Suppression</span>
+                </label>
+            </div>
+            <div class="settings-area" style="justify-content: center;">
+                <label class="checkbox-wrapper">
                     🌐
                     <select id="language-select">
                         <option value="tr">Türkçe</option>
@@ -1104,6 +1109,7 @@
         let myNickname = "Misafir";
         let currentRoomName = '';
         let soundsEnabled = true;
+        let noiseSuppressionEnabled = true;
         let isListener = false;
         const nicknames = {};
         const activeCalls = {}; // Keep track of active MediaConnections
@@ -1160,6 +1166,7 @@
             document.getElementById('password-input').placeholder = t('ui.passwordPlaceholder');
             document.getElementById('join-btn').innerText = t('ui.joinRoom');
             document.getElementById('notification-sounds-label').innerText = t('ui.notificationSounds');
+            document.getElementById('noise-suppression-label').innerText = t('ui.noiseSuppression');
             document.getElementById('sound-toggle-main-label').title = t('ui.entrySounds');
             document.getElementById('btn-share-screen-header').innerText = t('ui.shareScreen');
             document.getElementById('btn-share-screen-header').title = t('ui.shareScreen');
@@ -1178,6 +1185,7 @@
             document.getElementById('password-input').setAttribute('aria-label', t('ui.aria.passwordInput'));
             document.getElementById('join-btn').setAttribute('aria-label', t('ui.aria.joinRoom'));
             document.getElementById('sound-toggle-login').setAttribute('aria-label', t('ui.aria.notificationSounds'));
+            document.getElementById('noise-suppression-toggle').setAttribute('aria-label', t('ui.aria.noiseSuppression'));
             document.getElementById('language-select').setAttribute('aria-label', t('ui.aria.languageSelect'));
             document.getElementById('sound-toggle-main').setAttribute('aria-label', t('ui.aria.entrySounds'));
             document.getElementById('btn-share-screen-header').setAttribute('aria-label', t('ui.aria.shareScreen'));
@@ -1322,6 +1330,9 @@
             const t2 = document.getElementById('sound-toggle-main');
             if (t1) t1.addEventListener('change', (e) => { soundsEnabled = e.target.checked; if (t2) t2.checked = e.target.checked; });
             if (t2) t2.addEventListener('change', (e) => { soundsEnabled = e.target.checked; if (t1) t1.checked = e.target.checked; });
+
+            const nsToggle = document.getElementById('noise-suppression-toggle');
+            if (nsToggle) nsToggle.addEventListener('change', (e) => { noiseSuppressionEnabled = e.target.checked; });
 
             try {
                 const res = await fetch('/rooms');
@@ -1527,7 +1538,13 @@
 
             try {
                 // MİKROFONU DENE
-                myStream = await navigator.mediaDevices.getUserMedia({ audio: true });
+                myStream = await navigator.mediaDevices.getUserMedia({
+                    audio: {
+                        noiseSuppression: noiseSuppressionEnabled,
+                        echoCancellation: noiseSuppressionEnabled,
+                        autoGainControl: noiseSuppressionEnabled
+                    }
+                });
                 isListener = false;
             } catch (err) {
                 console.warn("Mikrofon hatası:", err);
