@@ -1035,12 +1035,6 @@ input[type=range] {
 
     .user-card .kick-vote-count {
         position: static;
-        display: none;
-    }
-
-    .user-card .kick-vote-count[style*="display: flex"],
-    .user-card .kick-vote-count[style*="display:flex"] {
-        position: static;
     }
 
     header {
@@ -1069,9 +1063,10 @@ input[type=range] {
         font-size: 11px;
     }
 
-    #my-mute-btn {
+    #header-controls #my-mute-btn {
         min-width: 70px !important;
-        font-size: 11px !important;
+        padding: 6px 8px !important;
+        font-size: 11px;
     }
 
     /* Chat panel scrolling fixes */
