@@ -1040,6 +1040,9 @@
                     <button onclick="toggleMyMute()" id="my-mute-btn" style="min-width:132px; margin:0; padding:8px 16px; white-space:nowrap;">
                         🎤 Sustur
                     </button>
+                    <button id="rename-btn" onclick="renameSelf()" style="width:auto; margin:0; padding:8px 16px;">
+                        ✏️ Yeniden Adlandır
+                    </button>
                     <button id="leave-btn" onclick="window.location.reload()" style="background:linear-gradient(135deg, var(--danger-color), #dc2626); width:auto; margin:0; padding:8px 16px;">
                         🚪 Ayrıl
                     </button>
@@ -1171,6 +1174,7 @@
             document.getElementById('btn-share-screen-header').innerText = t('ui.shareScreen');
             document.getElementById('btn-share-screen-header').title = t('ui.shareScreen');
             document.getElementById('my-mute-btn').innerText = t('ui.mute');
+            document.getElementById('rename-btn').innerText = t('ui.rename');
             document.getElementById('leave-btn').innerText = t('ui.leave');
             document.getElementById('screen-stage-label').innerText = t('ui.screenShareStage');
             document.getElementById('fullscreen-btn').innerText = t('ui.fullscreen');
@@ -1190,6 +1194,7 @@
             document.getElementById('sound-toggle-main').setAttribute('aria-label', t('ui.aria.entrySounds'));
             document.getElementById('btn-share-screen-header').setAttribute('aria-label', t('ui.aria.shareScreen'));
             document.getElementById('my-mute-btn').setAttribute('aria-label', t('ui.aria.toggleMute'));
+            document.getElementById('rename-btn').setAttribute('aria-label', t('ui.aria.renameSelf'));
             document.getElementById('leave-btn').setAttribute('aria-label', t('ui.aria.leaveRoom'));
             document.getElementById('fullscreen-btn').setAttribute('aria-label', t('ui.aria.fullscreen'));
             document.getElementById('chat-tab-btn').setAttribute('aria-label', t('ui.aria.tabChat'));
@@ -1705,6 +1710,13 @@
                 updateParticipantsList();
             });
 
+            socket.on('user-renamed', (uid, name) => {
+                nicknames[uid] = name;
+                updateUserCardName(uid, name);
+                if (myPeer && uid === myPeer.id) myNickname = name;
+                updateParticipantsList();
+            });
+
             // Vote Events
             socket.on('vote-started', ({ targetName, targetId }) => {
                 showVoteModal(targetName, targetId);
@@ -1999,6 +2011,15 @@
                     btn.style.color = "#fff";
                 }
             }
+        }
+
+        function renameSelf() {
+            if (!socket) return;
+            const nextName = window.prompt(t('ui.renamePrompt'), myNickname);
+            if (nextName === null) return;
+            const trimmed = nextName.trim();
+            if (!trimmed) return;
+            socket.emit('rename-user', trimmed);
         }
 
 

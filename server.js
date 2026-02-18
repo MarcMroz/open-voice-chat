@@ -257,6 +257,25 @@ io.on('connection', socket => {
       });
     });
 
+    socket.on('rename-user', (nextNickname) => {
+      if (!roomUsers[roomId]) return;
+      const requestedName = String(nextNickname || '').trim();
+      if (!requestedName) return;
+
+      let safeNewName = requestedName;
+      let suffix = 1;
+      const existingNames = new Set(Object.entries(roomUsers[roomId])
+        .filter(([id]) => id !== peerId)
+        .map(([, name]) => name));
+      while (existingNames.has(safeNewName)) {
+        safeNewName = `${requestedName}_${suffix++}`;
+      }
+
+      nickname = safeNewName;
+      roomUsers[roomId][peerId] = safeNewName;
+      io.to(roomId).emit('user-renamed', peerId, safeNewName);
+    });
+
     // --- Screen Share Lock Logic ---
     socket.on('request-share', () => {
       const currentSharer = roomScreenShares[roomId];
