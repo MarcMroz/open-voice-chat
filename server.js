@@ -19,8 +19,10 @@ const ALLOWED_REACTION_AGES = ['base', 'adult'];
 const REQUESTED_DEFAULT_REACTION_AGE = String(process.env.REACTIONS_AGE || 'base').toLowerCase();
 const DEFAULT_REACTION_AGE = ALLOWED_REACTION_AGES.includes(REQUESTED_DEFAULT_REACTION_AGE) ? REQUESTED_DEFAULT_REACTION_AGE : 'base';
 const PBKDF2_MIN_ITERATIONS = 600000;
+const PBKDF2_MAX_ITERATIONS = 10000000;
 const PBKDF2_KEY_LENGTH = 32;
 const ROOM_AUTH_FAILURE_RETENTION_MS = 24 * 60 * 60 * 1000;
+const ROOM_AUTH_CLEANUP_INTERVAL_MS = 60 * 1000;
 
 function getPositiveIntEnv(name, fallback) {
   const value = Number(process.env[name]);
@@ -35,6 +37,7 @@ const roomVotes = {};           // { roomId: { targetId, targetName, yes, no, vo
 const roomCooldowns = {};       // { roomId: timestamp }
 const bannedIPs = {};           // { ip: expireTimestamp }
 const roomAuthFailures = {};    // { roomId: { ip: { count, blockedUntil } } }
+const roomAuthFailuresLastCleanup = {}; // { roomId: timestamp }
 const socketMap = {};           // { socketId: { roomId, peerId } } -- Critical for Ghost User Fix
 const VALID_AVATAR_SETS = ['set1', 'set2', 'set3', 'set4', 'set5'];
 const VALID_AVATAR_BGS = ['none', 'bg1', 'bg2'];
@@ -82,8 +85,9 @@ function verifyRoomPassword(room, providedPassword) {
     const [algorithm, iterationsRaw, saltHex, expectedHashHex] = hashParts;
     if (algorithm !== 'pbkdf2' || !iterationsRaw || !saltHex || !expectedHashHex) return false;
     const iterations = Number(iterationsRaw);
-    if (!Number.isInteger(iterations) || iterations < PBKDF2_MIN_ITERATIONS) return false;
+    if (!Number.isInteger(iterations) || iterations < PBKDF2_MIN_ITERATIONS || iterations > PBKDF2_MAX_ITERATIONS) return false;
     if (!/^[a-f0-9]+$/i.test(saltHex) || !/^[a-f0-9]+$/i.test(expectedHashHex)) return false;
+    if (saltHex.length < 32 || expectedHashHex.length !== (PBKDF2_KEY_LENGTH * 2)) return false;
 
     const expectedHash = Buffer.from(expectedHashHex, 'hex');
     if (expectedHash.length !== PBKDF2_KEY_LENGTH) return false;
@@ -240,13 +244,17 @@ io.on('connection', socket => {
     }
     const roomFailures = roomAuthFailures[roomId] || (roomAuthFailures[roomId] = {});
     const now = Date.now();
-    Object.keys(roomFailures).forEach((failureIp) => {
-      const state = roomFailures[failureIp];
-      if (state && (now - state.lastAttempt > ROOM_AUTH_FAILURE_RETENTION_MS) && now >= state.blockedUntil) {
-        delete roomFailures[failureIp];
-      }
-    });
-    const authState = roomFailures[ip] || (roomFailures[ip] = { count: 0, blockedUntil: 0, lastAttempt: now });
+    const lastCleanup = roomAuthFailuresLastCleanup[roomId] || 0;
+    if (now - lastCleanup > ROOM_AUTH_CLEANUP_INTERVAL_MS) {
+      Object.keys(roomFailures).forEach((failureIp) => {
+        const state = roomFailures[failureIp];
+        if (state && (now - state.lastAttempt > ROOM_AUTH_FAILURE_RETENTION_MS) && now >= state.blockedUntil) {
+          delete roomFailures[failureIp];
+        }
+      });
+      roomAuthFailuresLastCleanup[roomId] = now;
+    }
+    const authState = roomFailures[ip] || (roomFailures[ip] = { count: 0, blockedUntil: 0, lastAttempt: 0 });
     authState.lastAttempt = now;
 
     if (now < authState.blockedUntil) {
