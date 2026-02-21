@@ -739,8 +739,16 @@ function initSocket(roomId, id, password) {
     });
 
     socket.on('error', msg => {
-        const translatedError = msg === 'INVALID_PASSWORD' ? t('ui.invalidPassword') : msg;
-        showAppAlert(t('ui.errorPrefix', { error: translatedError })).then(() => window.location.reload());
+        if (msg === 'INVALID_PASSWORD') {
+            const joinBtn = document.getElementById('join-btn');
+            if (joinBtn) {
+                joinBtn.disabled = false;
+                joinBtn.innerText = t('ui.joinRoom');
+            }
+            showAppAlert(t('ui.errorPrefix', { error: t('ui.invalidPassword') }));
+            return;
+        }
+        showAppAlert(t('ui.errorPrefix', { error: msg })).then(() => window.location.reload());
     });
 
     socket.on('user-connected', (uid, name, avatarStyle) => {
