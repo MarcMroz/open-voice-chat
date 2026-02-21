@@ -4,7 +4,7 @@
   "description": "Lightweight Dockerized Voice Chat",
   "main": "server.js",
   "scripts": {
-    "prestart": "[ -d node_modules ] || npm install --no-audit --no-fund",
+    "prestart": "node -e \"const fs=require('fs');if(!fs.existsSync('node_modules'))require('child_process').execSync('npm install --no-audit --no-fund',{stdio:'inherit'});\"",
     "start": "node server.js"
   },
   "dependencies": {
