@@ -12,6 +12,7 @@ const io = require('socket.io')(server, {
 const { ExpressPeerServer } = require('peer');
 const path = require('path');
 const fs = require('fs');
+const crypto = require('crypto');
 
 const PORT = process.env.PORT || 3000;
 const ALLOWED_REACTION_AGES = ['base', 'adult'];
@@ -25,9 +26,16 @@ const roomScreenShares = {};    // { roomId: peerId } -- Single Sharer Tracker
 const roomVotes = {};           // { roomId: { targetId, targetName, yes, no, voters: Set(), timer, active: bool } }
 const roomCooldowns = {};       // { roomId: timestamp }
 const bannedIPs = {};           // { ip: expireTimestamp }
+const roomAuthFailures = {};    // { roomId: { ip: { count, blockedUntil } } }
 const socketMap = {};           // { socketId: { roomId, peerId } } -- Critical for Ghost User Fix
 const VALID_AVATAR_SETS = ['set1', 'set2', 'set3', 'set4', 'set5'];
 const VALID_AVATAR_BGS = ['none', 'bg1', 'bg2'];
+const ROOM_PASSWORD_MAX_ATTEMPTS = Number.isInteger(Number(process.env.ROOM_PASSWORD_MAX_ATTEMPTS)) && Number(process.env.ROOM_PASSWORD_MAX_ATTEMPTS) > 0
+  ? Number(process.env.ROOM_PASSWORD_MAX_ATTEMPTS)
+  : 5;
+const ROOM_PASSWORD_BLOCK_MINUTES = Number.isInteger(Number(process.env.ROOM_PASSWORD_BLOCK_MINUTES)) && Number(process.env.ROOM_PASSWORD_BLOCK_MINUTES) > 0
+  ? Number(process.env.ROOM_PASSWORD_BLOCK_MINUTES)
+  : 5;
 
 // Helper: Robust IP Detection
 function getClientIP(socket) {
@@ -53,6 +61,28 @@ function getClientIP(socket) {
     console.error("Failed to detect IP:", e);
     return '0.0.0.0';
   }
+}
+
+function safeStringCompare(a, b) {
+  const aBuf = Buffer.from(String(a || ''), 'utf8');
+  const bBuf = Buffer.from(String(b || ''), 'utf8');
+  if (aBuf.length !== bBuf.length) return false;
+  return crypto.timingSafeEqual(aBuf, bBuf);
+}
+
+function verifyRoomPassword(room, providedPassword) {
+  if (!room.password && !room.passwordHash) return true;
+  if (room.passwordHash) {
+    const [algorithm, iterationsRaw, saltHex, expectedHashHex] = String(room.passwordHash).split('$');
+    if (algorithm !== 'pbkdf2' || !iterationsRaw || !saltHex || !expectedHashHex) return false;
+    const iterations = Number(iterationsRaw);
+    if (!Number.isInteger(iterations) || iterations < 10000) return false;
+
+    const expectedHash = Buffer.from(expectedHashHex, 'hex');
+    const computedHash = crypto.pbkdf2Sync(String(providedPassword || ''), Buffer.from(saltHex, 'hex'), iterations, expectedHash.length, 'sha256');
+    return expectedHash.length > 0 && crypto.timingSafeEqual(expectedHash, computedHash);
+  }
+  return safeStringCompare(room.password, providedPassword);
 }
 
 // Load Rooms Config
@@ -200,10 +230,26 @@ io.on('connection', socket => {
       socket.emit('error', 'Oda bulunamadı');
       return;
     }
-    if (room.password && room.password !== password) {
+    const roomFailures = roomAuthFailures[roomId] || (roomAuthFailures[roomId] = {});
+    const authState = roomFailures[ip] || (roomFailures[ip] = { count: 0, blockedUntil: 0 });
+
+    if (Date.now() < authState.blockedUntil) {
+      const timeLeft = Math.ceil((authState.blockedUntil - Date.now()) / 60000);
+      socket.emit('error', `Çok fazla hatalı şifre denemesi. ${timeLeft} dakika sonra tekrar deneyin.`);
+      return;
+    }
+
+    if (!verifyRoomPassword(room, password)) {
+      authState.count += 1;
+      if (authState.count >= ROOM_PASSWORD_MAX_ATTEMPTS) {
+        authState.blockedUntil = Date.now() + (ROOM_PASSWORD_BLOCK_MINUTES * 60 * 1000);
+        authState.count = 0;
+      }
       socket.emit('error', 'INVALID_PASSWORD');
       return;
     }
+    authState.count = 0;
+    authState.blockedUntil = 0;
 
     console.log(`[Socket] User ${nickname} joining ${roomId}`);
     socket.join(roomId);
