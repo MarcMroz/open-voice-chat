@@ -75,7 +75,9 @@ function safeStringCompare(a, b) {
 function verifyRoomPassword(room, providedPassword) {
   if (!room.password && !room.passwordHash) return true;
   if (room.passwordHash) {
-    const [algorithm, iterationsRaw, saltHex, expectedHashHex] = String(room.passwordHash).split('$');
+    const hashParts = String(room.passwordHash).split('$');
+    if (hashParts.length !== 4) return false;
+    const [algorithm, iterationsRaw, saltHex, expectedHashHex] = hashParts;
     if (algorithm !== 'pbkdf2' || !iterationsRaw || !saltHex || !expectedHashHex) return false;
     const iterations = Number(iterationsRaw);
     if (!Number.isInteger(iterations) || iterations < PBKDF2_MIN_ITERATIONS) return false;
@@ -236,8 +238,7 @@ io.on('connection', socket => {
     const authState = roomFailures[ip] || (roomFailures[ip] = { count: 0, blockedUntil: 0 });
 
     if (Date.now() < authState.blockedUntil) {
-      const timeLeft = Math.ceil((authState.blockedUntil - Date.now()) / 60000);
-      socket.emit('error', `Çok fazla hatalı şifre denemesi. ${timeLeft} dakika sonra tekrar deneyin.`);
+      socket.emit('error', 'Çok fazla hatalı şifre denemesi. Lütfen daha sonra tekrar deneyin.');
       return;
     }
 
