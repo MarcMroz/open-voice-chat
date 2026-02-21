@@ -115,6 +115,23 @@ ROOMS_JSON=[{"id":"lobby","name":"Lobby (Public)","password":null},{"id":"vip","
 
 When `ROOMS_JSON` is present, it overrides `config/rooms.json`.
 
+For **Azure Static Web App** deployments (frontend-only), provide runtime variables via `public/env.js`:
+
+```js
+window.__ENV__ = {
+  ROOMS_JSON: '[{"id":"lobby","name":"Lobby (Public)","password":null}]',
+  SERVER_URL: 'https://your-node-backend.azurewebsites.net',
+  PEER_SERVER_URL: 'https://your-node-backend.azurewebsites.net/peerjs'
+};
+```
+
+The app reads `ROOMS_JSON`, `SERVER_URL` and `PEER_SERVER_URL` from `window.__ENV__` first.  
+`config.json` / `config/rooms.json` are only fallback options for local/static testing.
+
+> **Important:** Open Voice Chat cannot run as a purely static-only site.  
+> WebRTC signaling still requires a live backend (Socket.IO + PeerJS server).  
+> Azure Static Web App can host the frontend, but `SERVER_URL`/`PEER_SERVER_URL` must point to a running Node backend.
+
 For stronger protection, use a hashed password instead of plain `password`:
 
 ```json

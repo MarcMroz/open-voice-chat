@@ -22,6 +22,7 @@ let activeKickVote = null;
 let myAvatarSet = 'set1';
 let myAvatarBg = 'bg1';
 const userAvatarStyles = {}; // { peerId: { set, bg } }
+let appConfig = {};
 
 let i18nUnavailableWarned = false;
 const t = (key, params) => {
@@ -170,6 +171,96 @@ function renderRoomOptions() {
     }
     select.style.display = availableRooms.length === 1 ? 'none' : 'block';
     checkRoomLock();
+}
+
+function normalizeRooms(roomList) {
+    if (!Array.isArray(roomList)) return [];
+    return roomList
+        .filter(r => r && r.id && r.name)
+        .map(r => ({
+            id: r.id,
+            name: r.name,
+            isLocked: typeof r.isLocked === 'boolean' ? r.isLocked : !!(r.password || r.passwordHash)
+        }));
+}
+
+function getRuntimeEnv() {
+    if (window.__ENV__ && typeof window.__ENV__ === 'object') return window.__ENV__;
+    if (window.env && typeof window.env === 'object') return window.env;
+    if (window.process && window.process.env && typeof window.process.env === 'object') return window.process.env;
+    return {};
+}
+
+function getRuntimeValue(...keys) {
+    const env = getRuntimeEnv();
+    for (const key of keys) {
+        const value = env[key];
+        if (typeof value === 'string' && value.trim()) return value.trim();
+    }
+    return '';
+}
+
+function getServerBaseUrl() {
+    return String(getRuntimeValue('SERVER_URL', 'API_BASE_URL') || appConfig.serverUrl || '').replace(/\/+$/, '');
+}
+
+function getPeerConnectionOptions() {
+    const peerUrlRaw = getRuntimeValue('PEER_SERVER_URL') || appConfig.peerServerUrl || (getServerBaseUrl() ? `${getServerBaseUrl()}/peerjs` : '');
+    if (!peerUrlRaw) {
+        const isSecure = window.location.protocol === 'https:';
+        return {
+            host: window.location.hostname,
+            port: isSecure ? 443 : 3000,
+            path: '/peerjs',
+            secure: isSecure
+        };
+    }
+
+    try {
+        const peerUrl = new URL(peerUrlRaw);
+        return {
+            host: peerUrl.hostname,
+            port: Number(peerUrl.port) || (peerUrl.protocol === 'https:' ? 443 : 80),
+            path: peerUrl.pathname || '/peerjs',
+            secure: peerUrl.protocol === 'https:'
+        };
+    } catch (_) {
+        const isSecure = window.location.protocol === 'https:';
+        return {
+            host: window.location.hostname,
+            port: isSecure ? 443 : 3000,
+            path: '/peerjs',
+            secure: isSecure
+        };
+    }
+}
+
+async function fetchRooms() {
+    const envRoomsJson = getRuntimeValue('ROOMS_JSON');
+    if (envRoomsJson) {
+        try {
+            const envRooms = normalizeRooms(JSON.parse(envRoomsJson));
+            if (envRooms.length > 0) return envRooms;
+        } catch (err) {
+            console.warn('ROOMS_JSON parse error:', err);
+        }
+    }
+
+    const fromConfig = normalizeRooms(appConfig.rooms);
+    if (fromConfig.length > 0) return fromConfig;
+
+    const serverBaseUrl = getServerBaseUrl();
+    const roomSources = [`${serverBaseUrl}/rooms`, '/rooms', '/config/rooms.json'];
+    for (const url of roomSources) {
+        try {
+            const response = await fetch(url, { cache: 'no-store' });
+            if (!response.ok) continue;
+            const rooms = normalizeRooms(await response.json());
+            if (rooms.length > 0) return rooms;
+        } catch (_) { }
+    }
+
+    return [];
 }
 
 function applyTranslations() {
@@ -325,6 +416,11 @@ function showAppPrompt(message, defaultValue = '') {
 
 // --- Init ---
 window.onload = async function () {
+    try {
+        const configRes = await fetch('/config.json', { cache: 'no-store' });
+        if (configRes.ok) appConfig = await configRes.json();
+    } catch (_) { }
+
     if (!window.i18next || !window.i18nextHttpBackend || !window.i18nextBrowserLanguageDetector) {
         console.error('Required i18next libraries failed to load. Please refresh the page or check your connection.');
         return;
@@ -405,8 +501,8 @@ window.onload = async function () {
     if (nsToggle) nsToggle.addEventListener('change', (e) => { noiseSuppressionEnabled = e.target.checked; });
 
     try {
-        const res = await fetch('/rooms');
-        availableRooms = await res.json();
+        availableRooms = await fetchRooms();
+        if (availableRooms.length === 0) availableRooms = [{ id: 'lobby', name: 'Lobby', isLocked: false }];
         renderRoomOptions();
     } catch (e) { console.error("Odalar yüklenemedi", e); }
 
@@ -639,13 +735,7 @@ async function startApp() {
     }
 
     try {
-        const isSecure = window.location.protocol === 'https:';
-        myPeer = new Peer(undefined, {
-            host: window.location.hostname,
-            port: isSecure ? 443 : 3000,
-            path: '/peerjs',
-            secure: isSecure
-        });
+        myPeer = new Peer(undefined, getPeerConnectionOptions());
 
         myPeer.on('open', id => initSocket(roomId, id, password));
 
@@ -691,7 +781,8 @@ async function startApp() {
 }
 
 function initSocket(roomId, id, password) {
-    socket = io('/', {
+    const socketUrl = getServerBaseUrl() || '/';
+    socket = io(socketUrl, {
         transports: ['polling', 'websocket'], // Fix: Polling first is more stable behind proxies
         reconnectionAttempts: 5,
         timeout: 10000
