@@ -12,11 +12,22 @@ const io = require('socket.io')(server, {
 const { ExpressPeerServer } = require('peer');
 const path = require('path');
 const fs = require('fs');
+const crypto = require('crypto');
 
 const PORT = process.env.PORT || 3000;
 const ALLOWED_REACTION_AGES = ['base', 'adult'];
 const REQUESTED_DEFAULT_REACTION_AGE = String(process.env.REACTIONS_AGE || 'base').toLowerCase();
 const DEFAULT_REACTION_AGE = ALLOWED_REACTION_AGES.includes(REQUESTED_DEFAULT_REACTION_AGE) ? REQUESTED_DEFAULT_REACTION_AGE : 'base';
+const PBKDF2_MIN_ITERATIONS = 600000;
+const PBKDF2_MAX_ITERATIONS = 10000000;
+const PBKDF2_KEY_LENGTH = 32;
+const ROOM_AUTH_FAILURE_RETENTION_MS = 24 * 60 * 60 * 1000;
+const ROOM_AUTH_CLEANUP_INTERVAL_MS = 60 * 1000;
+
+function getPositiveIntEnv(name, fallback) {
+  const value = Number(process.env[name]);
+  return Number.isInteger(value) && value > 0 ? value : fallback;
+}
 
 // Global State
 const roomUsers = {};           // { roomId: { peerId: "Nickname" } }
@@ -25,9 +36,13 @@ const roomScreenShares = {};    // { roomId: peerId } -- Single Sharer Tracker
 const roomVotes = {};           // { roomId: { targetId, targetName, yes, no, voters: Set(), timer, active: bool } }
 const roomCooldowns = {};       // { roomId: timestamp }
 const bannedIPs = {};           // { ip: expireTimestamp }
+const roomAuthFailures = {};    // { roomId: { ip: { count, blockedUntil } } }
+const roomAuthFailuresLastCleanup = {}; // { roomId: timestamp }
 const socketMap = {};           // { socketId: { roomId, peerId } } -- Critical for Ghost User Fix
 const VALID_AVATAR_SETS = ['set1', 'set2', 'set3', 'set4', 'set5'];
 const VALID_AVATAR_BGS = ['none', 'bg1', 'bg2'];
+const ROOM_PASSWORD_MAX_ATTEMPTS = getPositiveIntEnv('ROOM_PASSWORD_MAX_ATTEMPTS', 5);
+const ROOM_PASSWORD_BLOCK_MINUTES = getPositiveIntEnv('ROOM_PASSWORD_BLOCK_MINUTES', 5);
 
 // Helper: Robust IP Detection
 function getClientIP(socket) {
@@ -53,6 +68,33 @@ function getClientIP(socket) {
     console.error("Failed to detect IP:", e);
     return '0.0.0.0';
   }
+}
+
+function safeStringCompare(a, b) {
+  const aBuf = Buffer.from(String(a || ''), 'utf8');
+  const bBuf = Buffer.from(String(b || ''), 'utf8');
+  if (aBuf.length !== bBuf.length) return false;
+  return crypto.timingSafeEqual(aBuf, bBuf);
+}
+
+function verifyRoomPassword(room, providedPassword) {
+  if (!room.password && !room.passwordHash) return true;
+  if (room.passwordHash) {
+    const hashParts = String(room.passwordHash).split('$');
+    if (hashParts.length !== 4) return false;
+    const [algorithm, iterationsRaw, saltHex, expectedHashHex] = hashParts;
+    if (algorithm !== 'pbkdf2' || !iterationsRaw || !saltHex || !expectedHashHex) return false;
+    const iterations = Number(iterationsRaw);
+    if (!Number.isInteger(iterations) || iterations < PBKDF2_MIN_ITERATIONS || iterations > PBKDF2_MAX_ITERATIONS) return false;
+    if (!/^[a-f0-9]+$/i.test(saltHex) || !/^[a-f0-9]+$/i.test(expectedHashHex)) return false;
+    if (saltHex.length < 32 || expectedHashHex.length !== (PBKDF2_KEY_LENGTH * 2)) return false;
+
+    const expectedHash = Buffer.from(expectedHashHex, 'hex');
+    if (expectedHash.length !== PBKDF2_KEY_LENGTH) return false;
+    const computedHash = crypto.pbkdf2Sync(String(providedPassword || ''), Buffer.from(saltHex, 'hex'), iterations, PBKDF2_KEY_LENGTH, 'sha256');
+    return crypto.timingSafeEqual(expectedHash, computedHash);
+  }
+  return safeStringCompare(room.password, providedPassword);
 }
 
 // Load Rooms Config
@@ -200,10 +242,37 @@ io.on('connection', socket => {
       socket.emit('error', 'Oda bulunamadı');
       return;
     }
-    if (room.password && room.password !== password) {
+    const roomFailures = roomAuthFailures[roomId] || (roomAuthFailures[roomId] = {});
+    const now = Date.now();
+    const lastCleanup = roomAuthFailuresLastCleanup[roomId] || 0;
+    if (now - lastCleanup > ROOM_AUTH_CLEANUP_INTERVAL_MS) {
+      Object.keys(roomFailures).forEach((failureIp) => {
+        const state = roomFailures[failureIp];
+        if (state && (now - state.lastAttempt > ROOM_AUTH_FAILURE_RETENTION_MS) && now >= state.blockedUntil) {
+          delete roomFailures[failureIp];
+        }
+      });
+      roomAuthFailuresLastCleanup[roomId] = now;
+    }
+    const authState = roomFailures[ip] || (roomFailures[ip] = { count: 0, blockedUntil: 0, lastAttempt: 0 });
+    authState.lastAttempt = now;
+
+    if (now < authState.blockedUntil) {
+      socket.emit('error', 'Çok fazla hatalı şifre denemesi. Lütfen daha sonra tekrar deneyin.');
+      return;
+    }
+
+    if (!verifyRoomPassword(room, password)) {
+      authState.count += 1;
+      if (authState.count >= ROOM_PASSWORD_MAX_ATTEMPTS) {
+        authState.blockedUntil = now + (ROOM_PASSWORD_BLOCK_MINUTES * 60 * 1000);
+        authState.count = 0;
+      }
       socket.emit('error', 'INVALID_PASSWORD');
       return;
     }
+    authState.count = 0;
+    authState.blockedUntil = 0;
 
     console.log(`[Socket] User ${nickname} joining ${roomId}`);
     socket.join(roomId);
