@@ -513,7 +513,7 @@ function playReactionSound(url, userName) {
 
         // Create and play new audio
         const audio = new Audio(url);
-        audio.volume = 0.7;
+        audio.volume = 0.5;
         currentReactionAudio = audio;
 
         // Clear reference when audio ends
