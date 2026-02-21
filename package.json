@@ -4,7 +4,7 @@
   "description": "Lightweight Dockerized Voice Chat",
   "main": "server.js",
   "scripts": {
-    "prestart": "npm install --no-audit --no-fund",
+    "prestart": "[ -d node_modules ] || npm install --no-audit --no-fund",
     "start": "node server.js"
   },
   "dependencies": {
