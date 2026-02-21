@@ -19,6 +19,8 @@ const ALLOWED_REACTION_AGES = ['base', 'adult'];
 const REQUESTED_DEFAULT_REACTION_AGE = String(process.env.REACTIONS_AGE || 'base').toLowerCase();
 const DEFAULT_REACTION_AGE = ALLOWED_REACTION_AGES.includes(REQUESTED_DEFAULT_REACTION_AGE) ? REQUESTED_DEFAULT_REACTION_AGE : 'base';
 const PBKDF2_MIN_ITERATIONS = 600000;
+const PBKDF2_KEY_LENGTH = 32;
+const ROOM_AUTH_FAILURE_RETENTION_MS = 24 * 60 * 60 * 1000;
 
 function getPositiveIntEnv(name, fallback) {
   const value = Number(process.env[name]);
@@ -81,10 +83,12 @@ function verifyRoomPassword(room, providedPassword) {
     if (algorithm !== 'pbkdf2' || !iterationsRaw || !saltHex || !expectedHashHex) return false;
     const iterations = Number(iterationsRaw);
     if (!Number.isInteger(iterations) || iterations < PBKDF2_MIN_ITERATIONS) return false;
+    if (!/^[a-f0-9]+$/i.test(saltHex) || !/^[a-f0-9]+$/i.test(expectedHashHex)) return false;
 
     const expectedHash = Buffer.from(expectedHashHex, 'hex');
-    const computedHash = crypto.pbkdf2Sync(String(providedPassword || ''), Buffer.from(saltHex, 'hex'), iterations, expectedHash.length, 'sha256');
-    return expectedHash.length > 0 && crypto.timingSafeEqual(expectedHash, computedHash);
+    if (expectedHash.length !== PBKDF2_KEY_LENGTH) return false;
+    const computedHash = crypto.pbkdf2Sync(String(providedPassword || ''), Buffer.from(saltHex, 'hex'), iterations, PBKDF2_KEY_LENGTH, 'sha256');
+    return crypto.timingSafeEqual(expectedHash, computedHash);
   }
   return safeStringCompare(room.password, providedPassword);
 }
@@ -235,9 +239,17 @@ io.on('connection', socket => {
       return;
     }
     const roomFailures = roomAuthFailures[roomId] || (roomAuthFailures[roomId] = {});
-    const authState = roomFailures[ip] || (roomFailures[ip] = { count: 0, blockedUntil: 0 });
+    const now = Date.now();
+    Object.keys(roomFailures).forEach((failureIp) => {
+      const state = roomFailures[failureIp];
+      if (state && (now - state.lastAttempt > ROOM_AUTH_FAILURE_RETENTION_MS) && now >= state.blockedUntil) {
+        delete roomFailures[failureIp];
+      }
+    });
+    const authState = roomFailures[ip] || (roomFailures[ip] = { count: 0, blockedUntil: 0, lastAttempt: now });
+    authState.lastAttempt = now;
 
-    if (Date.now() < authState.blockedUntil) {
+    if (now < authState.blockedUntil) {
       socket.emit('error', 'Çok fazla hatalı şifre denemesi. Lütfen daha sonra tekrar deneyin.');
       return;
     }
@@ -245,7 +257,7 @@ io.on('connection', socket => {
     if (!verifyRoomPassword(room, password)) {
       authState.count += 1;
       if (authState.count >= ROOM_PASSWORD_MAX_ATTEMPTS) {
-        authState.blockedUntil = Date.now() + (ROOM_PASSWORD_BLOCK_MINUTES * 60 * 1000);
+        authState.blockedUntil = now + (ROOM_PASSWORD_BLOCK_MINUTES * 60 * 1000);
         authState.count = 0;
       }
       socket.emit('error', 'INVALID_PASSWORD');
