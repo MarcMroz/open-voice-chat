@@ -120,14 +120,14 @@ For stronger protection, use a hashed password instead of plain `password`:
 ```json
 [
   { "id": "lobby", "name": "Lobby (Public)", "password": null },
-  { "id": "vip", "name": "VIP Room (Private)", "passwordHash": "pbkdf2$120000$<saltHex>$<hashHex>" }
+  { "id": "vip", "name": "VIP Room (Private)", "passwordHash": "pbkdf2$600000$<saltHex>$<hashHex>" }
 ]
 ```
 
 Generate a hash with Node.js:
 
 ```bash
-node -e "const crypto=require('crypto');const password='your-strong-password';const salt=crypto.randomBytes(16);const iterations=120000;const hash=crypto.pbkdf2Sync(password,salt,iterations,32,'sha256');console.log(`pbkdf2$${iterations}$${salt.toString('hex')}$${hash.toString('hex')}`)"
+node -e "const crypto=require('crypto');const password='your-strong-password';const salt=crypto.randomBytes(16);const iterations=600000;const hash=crypto.pbkdf2Sync(password,salt,iterations,32,'sha256');console.log(`pbkdf2$${iterations}$${salt.toString('hex')}$${hash.toString('hex')}`)"
 ```
 
 The server also rate-limits invalid room password attempts per IP/room (defaults: 5 attempts, 5 minute block). You can tune this with `ROOM_PASSWORD_MAX_ATTEMPTS` and `ROOM_PASSWORD_BLOCK_MINUTES`.

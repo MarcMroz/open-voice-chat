@@ -18,6 +18,12 @@ const PORT = process.env.PORT || 3000;
 const ALLOWED_REACTION_AGES = ['base', 'adult'];
 const REQUESTED_DEFAULT_REACTION_AGE = String(process.env.REACTIONS_AGE || 'base').toLowerCase();
 const DEFAULT_REACTION_AGE = ALLOWED_REACTION_AGES.includes(REQUESTED_DEFAULT_REACTION_AGE) ? REQUESTED_DEFAULT_REACTION_AGE : 'base';
+const PBKDF2_MIN_ITERATIONS = 600000;
+
+function getPositiveIntEnv(name, fallback) {
+  const value = Number(process.env[name]);
+  return Number.isInteger(value) && value > 0 ? value : fallback;
+}
 
 // Global State
 const roomUsers = {};           // { roomId: { peerId: "Nickname" } }
@@ -30,12 +36,8 @@ const roomAuthFailures = {};    // { roomId: { ip: { count, blockedUntil } } }
 const socketMap = {};           // { socketId: { roomId, peerId } } -- Critical for Ghost User Fix
 const VALID_AVATAR_SETS = ['set1', 'set2', 'set3', 'set4', 'set5'];
 const VALID_AVATAR_BGS = ['none', 'bg1', 'bg2'];
-const ROOM_PASSWORD_MAX_ATTEMPTS = Number.isInteger(Number(process.env.ROOM_PASSWORD_MAX_ATTEMPTS)) && Number(process.env.ROOM_PASSWORD_MAX_ATTEMPTS) > 0
-  ? Number(process.env.ROOM_PASSWORD_MAX_ATTEMPTS)
-  : 5;
-const ROOM_PASSWORD_BLOCK_MINUTES = Number.isInteger(Number(process.env.ROOM_PASSWORD_BLOCK_MINUTES)) && Number(process.env.ROOM_PASSWORD_BLOCK_MINUTES) > 0
-  ? Number(process.env.ROOM_PASSWORD_BLOCK_MINUTES)
-  : 5;
+const ROOM_PASSWORD_MAX_ATTEMPTS = getPositiveIntEnv('ROOM_PASSWORD_MAX_ATTEMPTS', 5);
+const ROOM_PASSWORD_BLOCK_MINUTES = getPositiveIntEnv('ROOM_PASSWORD_BLOCK_MINUTES', 5);
 
 // Helper: Robust IP Detection
 function getClientIP(socket) {
@@ -76,7 +78,7 @@ function verifyRoomPassword(room, providedPassword) {
     const [algorithm, iterationsRaw, saltHex, expectedHashHex] = String(room.passwordHash).split('$');
     if (algorithm !== 'pbkdf2' || !iterationsRaw || !saltHex || !expectedHashHex) return false;
     const iterations = Number(iterationsRaw);
-    if (!Number.isInteger(iterations) || iterations < 10000) return false;
+    if (!Number.isInteger(iterations) || iterations < PBKDF2_MIN_ITERATIONS) return false;
 
     const expectedHash = Buffer.from(expectedHashHex, 'hex');
     const computedHash = crypto.pbkdf2Sync(String(providedPassword || ''), Buffer.from(saltHex, 'hex'), iterations, expectedHash.length, 'sha256');
