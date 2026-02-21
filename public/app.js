@@ -201,7 +201,7 @@ function getRuntimeValue(...keys) {
 }
 
 function getServerBaseUrl() {
-    return String(getRuntimeValue('SERVER_URL', 'API_BASE_URL') || appConfig.serverUrl || '').replace(/\/+$/, '');
+    return (getRuntimeValue('SERVER_URL', 'API_BASE_URL') || appConfig.serverUrl || '').replace(/\/+$/, '');
 }
 
 function getPeerConnectionOptions() {
@@ -224,7 +224,8 @@ function getPeerConnectionOptions() {
             path: peerUrl.pathname || '/peerjs',
             secure: peerUrl.protocol === 'https:'
         };
-    } catch (_) {
+    } catch (err) {
+        console.warn('PEER_SERVER_URL is invalid, falling back to default peer connection settings.', err);
         const isSecure = window.location.protocol === 'https:';
         return {
             host: window.location.hostname,
@@ -250,14 +251,20 @@ async function fetchRooms() {
     if (fromConfig.length > 0) return fromConfig;
 
     const serverBaseUrl = getServerBaseUrl();
-    const roomSources = [`${serverBaseUrl}/rooms`, '/rooms', '/config/rooms.json'];
+    const roomSources = [
+        ...(serverBaseUrl ? [`${serverBaseUrl}/rooms`] : []),
+        '/rooms',
+        '/config/rooms.json'
+    ];
     for (const url of roomSources) {
         try {
             const response = await fetch(url, { cache: 'no-store' });
             if (!response.ok) continue;
             const rooms = normalizeRooms(await response.json());
             if (rooms.length > 0) return rooms;
-        } catch (_) { }
+        } catch (err) {
+            console.warn(`Room source unavailable: ${url}`, err);
+        }
     }
 
     return [];
@@ -419,7 +426,9 @@ window.onload = async function () {
     try {
         const configRes = await fetch('/config.json', { cache: 'no-store' });
         if (configRes.ok) appConfig = await configRes.json();
-    } catch (_) { }
+    } catch (err) {
+        console.warn('config.json could not be loaded; continuing with env/default room sources.', err);
+    }
 
     if (!window.i18next || !window.i18nextHttpBackend || !window.i18nextBrowserLanguageDetector) {
         console.error('Required i18next libraries failed to load. Please refresh the page or check your connection.');

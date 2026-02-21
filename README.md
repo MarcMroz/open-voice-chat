@@ -125,6 +125,8 @@ window.__ENV__ = {
 };
 ```
 
+Commit only a safe placeholder `env.js` in git; inject real values during deployment (build/release pipeline), not in source control.
+
 The app reads `ROOMS_JSON`, `SERVER_URL` and `PEER_SERVER_URL` from `window.__ENV__` first.  
 `config.json` / `config/rooms.json` are only fallback options for local/static testing.
 
