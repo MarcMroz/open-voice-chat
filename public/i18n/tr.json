@@ -58,6 +58,7 @@
     "shareLockedTitle": "Başka biri ekran paylaşıyor",
     "kickConfirm": "{name} için atma oylaması başlatılsın mı? Sadece EVET oyları HAYIR oylarından fazlaysa atılır.",
     "kickVotesBadgeTitle": "Atma oyu: {count}",
+    "voteFailedResult": "ℹ️ Oylama başarısız. {name} kalıyor. (Evet: {yes}, Hayır: {no})",
     "kickedByVote": "Oy birliği ile odadan atıldınız.",
     "selectRoom": "Lütfen bir oda seçin!",
     "micErrorConfirm": "Mikrofon bulunamadı veya izin verilmedi ({error}).\n\nSadece DİNLEYİCİ olarak katılmak ister misiniz?",

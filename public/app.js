@@ -778,10 +778,19 @@ function initSocket(roomId, id, password) {
     socket.on('chat-message', (data) => {
         const div = document.createElement('div');
         div.className = 'message';
+        const messageText = data.textKey ? t(data.textKey, data.textParams || {}) : data.text;
         const displayTime = Number.isFinite(data.timestamp)
             ? new Date(data.timestamp).toLocaleTimeString(undefined, { hour: '2-digit', minute: '2-digit' })
             : data.time;
-        div.innerHTML = `<span class="msg-time">${displayTime}</span><span class="msg-user">${data.user}:</span> ${data.text}`;
+        const timeSpan = document.createElement('span');
+        timeSpan.className = 'msg-time';
+        timeSpan.textContent = displayTime;
+        const userSpan = document.createElement('span');
+        userSpan.className = 'msg-user';
+        userSpan.textContent = `${data.user}:`;
+        div.appendChild(timeSpan);
+        div.appendChild(userSpan);
+        div.appendChild(document.createTextNode(` ${messageText ?? ''}`));
         const box = document.getElementById('chat-messages');
         if (box) {
             box.appendChild(div);
