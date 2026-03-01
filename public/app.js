@@ -1,7 +1,6 @@
 // --- Sound Files ---
 const SOUND_JOIN = '/sounds/join.mp3';
 const SOUND_LEAVE = '/sounds/disconnect.mp3';
-const LEAVE_SOUND_SUPPRESSION_TIMEOUT_MS = 1500;
 
 // --- Globals ---
 let socket;
@@ -19,8 +18,7 @@ let isListener = false;
 const nicknames = {};
 const activeCalls = {}; // Keep track of active MediaConnections
 let currentScreenSharerId = null; // Track who is sharing screen
-let suppressLeaveSound = false;
-let suppressLeaveSoundTimer = null;
+
 let activeKickVote = null;
 let myAvatarSet = 'set1';
 let myAvatarBg = 'bg1';
@@ -805,6 +803,7 @@ function initSocket(roomId, id, password) {
         const userName = nicknames[uid] || t('ui.defaultUser');
         addSystemMsg(t('ui.userLeft', { name: userName }));
         removeUser(uid);
+        playSound('leave');
         delete nicknames[uid];
         updateParticipantsList();
     });
@@ -1119,7 +1118,6 @@ function removeUser(uid) {
 
     if (activeCalls[uid]) delete activeCalls[uid];
 
-    if (!suppressLeaveSound) playSound('leave');
 }
 
 window.setVolume = (uid, val) => {
@@ -1422,9 +1420,6 @@ function unlockShareButton() {
 }
 
 function reCallAllPeers(newStream) {
-    suppressLeaveSound = true;
-    if (suppressLeaveSoundTimer) clearTimeout(suppressLeaveSoundTimer);
-
     // Close existing calls (MediaConnections)
     Object.values(activeCalls).forEach(call => {
         call.close();
@@ -1452,9 +1447,4 @@ function reCallAllPeers(newStream) {
             if (avatarEl) avatarEl.style.display = 'block';
         });
     });
-
-    suppressLeaveSoundTimer = setTimeout(() => {
-        suppressLeaveSound = false;
-        suppressLeaveSoundTimer = null;
-    }, LEAVE_SOUND_SUPPRESSION_TIMEOUT_MS);
 }
