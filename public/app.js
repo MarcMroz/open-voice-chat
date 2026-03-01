@@ -1,6 +1,7 @@
 // --- Sound Files ---
 const SOUND_JOIN = '/sounds/join.mp3';
 const SOUND_LEAVE = '/sounds/disconnect.mp3';
+const LEAVE_SOUND_SUPPRESSION_TIMEOUT_MS = 1500;
 
 // --- Globals ---
 let socket;
@@ -1455,5 +1456,5 @@ function reCallAllPeers(newStream) {
     suppressLeaveSoundTimer = setTimeout(() => {
         suppressLeaveSound = false;
         suppressLeaveSoundTimer = null;
-    }, 1500);
+    }, LEAVE_SOUND_SUPPRESSION_TIMEOUT_MS);
 }
