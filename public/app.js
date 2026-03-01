@@ -1,6 +1,7 @@
 // --- Sound Files ---
 const SOUND_JOIN = '/sounds/join.mp3';
 const SOUND_LEAVE = '/sounds/disconnect.mp3';
+const LEAVE_SOUND_SUPPRESSION_TIMEOUT_MS = 1500;
 
 // --- Globals ---
 let socket;
@@ -18,6 +19,8 @@ let isListener = false;
 const nicknames = {};
 const activeCalls = {}; // Keep track of active MediaConnections
 let currentScreenSharerId = null; // Track who is sharing screen
+let suppressLeaveSound = false;
+let suppressLeaveSoundTimer = null;
 let activeKickVote = null;
 let myAvatarSet = 'set1';
 let myAvatarBg = 'bg1';
@@ -1116,7 +1119,7 @@ function removeUser(uid) {
 
     if (activeCalls[uid]) delete activeCalls[uid];
 
-    playSound('leave');
+    if (!suppressLeaveSound) playSound('leave');
 }
 
 window.setVolume = (uid, val) => {
@@ -1243,11 +1246,11 @@ async function startScreenShareActual() {
 
             } catch (err) {
                 console.error("Audio Mixing Failed, falling back to mic:", err);
-                finalAudioTrack = micAudioTracks[0];
+                finalAudioTrack = micAudioTracks[0].clone();
             }
         } else if (micAudioTracks.length > 0) {
             // No System Audio, Just Mic
-            finalAudioTrack = micAudioTracks[0];
+            finalAudioTrack = micAudioTracks[0].clone();
         } else {
             await showAppAlert(t('ui.noAudioSource'));
             socket.emit('stop-share');
@@ -1419,6 +1422,9 @@ function unlockShareButton() {
 }
 
 function reCallAllPeers(newStream) {
+    suppressLeaveSound = true;
+    if (suppressLeaveSoundTimer) clearTimeout(suppressLeaveSoundTimer);
+
     // Close existing calls (MediaConnections)
     Object.values(activeCalls).forEach(call => {
         call.close();
@@ -1446,4 +1452,9 @@ function reCallAllPeers(newStream) {
             if (avatarEl) avatarEl.style.display = 'block';
         });
     });
+
+    suppressLeaveSoundTimer = setTimeout(() => {
+        suppressLeaveSound = false;
+        suppressLeaveSoundTimer = null;
+    }, LEAVE_SOUND_SUPPRESSION_TIMEOUT_MS);
 }
