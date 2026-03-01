@@ -58,6 +58,7 @@
     "shareLockedTitle": "Otra persona está compartiendo pantalla",
     "kickConfirm": "¿Iniciar una votación para expulsar a {name}? Solo se expulsa si los votos SÍ son mayores que los NO.",
     "kickVotesBadgeTitle": "Votos para expulsar: {count}",
+    "voteFailedResult": "ℹ️ La votación falló. {name} se queda. (Sí: {yes}, No: {no})",
     "kickedByVote": "Fuiste expulsado de la sala por votación.",
     "selectRoom": "¡Por favor selecciona una sala!",
     "micErrorConfirm": "Micrófono no encontrado o permiso denegado ({error}).\n\n¿Quieres unirte solo como OYENTE?",
