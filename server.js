@@ -523,7 +523,6 @@ function endVote(roomId) {
   } else {
     io.to(roomId).emit('chat-message', {
       user: "Sistem",
-      text: `ℹ️ Oylama başarısız. ${v.targetName} kalıyor. (Evet: ${v.yes}, Hayır: ${v.no})`,
       textKey: 'ui.voteFailedResult',
       textParams: { name: v.targetName, yes: v.yes, no: v.no },
       time: new Date().toLocaleTimeString('tr-TR', { hour: '2-digit', minute: '2-digit' }),
